@@ -286,3 +286,36 @@ files/ #files文件夹下的文件都不再在管理
 
 2 wiki，项目文档
 
+创建标签示例
+
+创建轻量标签和附注标签
+
+```
+git tag v1.0
+git tag -a v1.1 -m "这是标签的内容"
+```
+
+查看标签和标签内容
+
+```
+git tag
+git show v1.1
+```
+
+推送标签到远程仓库
+
+```
+git push origin v1.0
+git push origin v1.1
+git push origin --tags #推送所有标签
+```
+
+删除标签
+
+```
+本地删除
+git tag -d v1.0
+远程删除
+git push origin --delete v1.0
+```
+
