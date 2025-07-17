@@ -219,3 +219,70 @@ git rebase 分支
 git log --graph --pretty=format:"%h %s"
 ```
 
+给开源软件贡献代码
+
+1 fork源码
+
+​	将别人的源码拷贝到自己的仓库中
+
+2 在自己的仓库中修改代码
+
+3 给源代码的作者提交 修复bug申请（pull request）
+
+第三章 配置
+
+项目配置文件：项目/.git/config
+
+```
+git config --local user.name 'Cheng'
+git config --local user.email 'chengliyangg@qq.com'
+```
+
+全局配置文件：~/.gitconfig
+
+```
+git config --global user.name 'Cheng'
+git config --global user.email 'chengliyangg@qq.com'
+```
+
+系统配置文件：/etc/.gitconfig
+
+```
+git config --system user.name 'Cheng'
+git config --system user.email 'chengliyangg@qq.com'
+注意需要有root权限
+```
+
+免密登录
+
+URL中体现
+
+```
+原来的地址：https://github.con/Wupeiqi/dbhot.git
+修改的地址：https://用户名:密码@github.com/Wupeiqi/dbhot.git
+
+git remote add origin https://用户名:密码@github.com/Wupeiqi/dbhot.git
+git push origin master
+```
+
+git 自动管理凭证
+
+3.3 git忽略文件
+
+让git不在管理当前目录下的某些文件
+
+```
+*.h    #以.h结尾的文件都不再管理
+!a.h   #排除a.h文件，即继续管理a.h文件
+files/ #files文件夹下的文件都不再在管理
+*.py[a|b|c] #以.pya  .pyb .pyc 的文件都不再管理
+```
+
+更多参考:https://github.com/github/gitignore
+
+3.4 GitHub任务管理相关
+
+1 issues，文档以及任务管理
+
+2 wiki，项目文档
+
