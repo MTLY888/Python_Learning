@@ -187,3 +187,35 @@ git pull origin dev
 git fetch origin dev + git merge origin/dev
 ```
 
+快速解决冲突
+
+1 安装beyond compare
+
+2 在git中进行配置
+
+```
+git config --local merge.tool bc3
+git config --local mergetool.path 'beyond compare的安装路径'
+git config --local mergetool.keepBackup false
+```
+
+3 应用beyond compare解决冲突
+
+```
+git mergetool
+```
+
+总结
+
+保持代码提交整洁（变基）
+
+```
+git rebase 分支
+```
+
+记录图形展示
+
+```
+git log --graph --pretty=format:"%h %s"
+```
+
