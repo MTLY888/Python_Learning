@@ -1,0 +1,1397 @@
+<!doctype html>
+<html lang="zh-CN">
+ <head> 
+  <meta charset="utf-8"> 
+  <link rel="canonical" href="https://blog.csdn.net/qq_45062768/article/details/133946135"> 
+  <meta http-equiv="content-type" content="text/html; charset=utf-8"> 
+  <meta name="renderer" content="webkit"> 
+  <meta name="force-rendering" content="webkit"> 
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+  <meta name="report" content="{&quot;pid&quot;: &quot;blog&quot;, &quot;spm&quot;:&quot;1001.2101&quot;}"> 
+  <meta name="referrer" content="always"> 
+  <meta http-equiv="Cache-Control" content="no-siteapp">
+  <link rel="alternate" media="handheld" href="#"> 
+  <meta name="shenma-site-verification" content="5a59773ab8077d4a62bf469ab966a63b_1497598848"> 
+  <meta name="applicable-device" content="pc"> 
+  <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"> 
+  <title>【轻量化篇】YOLOv8改进实战 | 更换主干网络 Backbone 之 GhostnetV2_yolov8 替换骨干网络-CSDN博客</title>  
+  <meta name="keywords" content="yolov8 替换骨干网络"> 
+  <meta name="csdn-baidu-search" content="{&quot;autorun&quot;:true,&quot;install&quot;:true,&quot;keyword&quot;:&quot;yolov8 替换骨干网络&quot;}"> 
+  <meta name="description" content="文章浏览阅读1.3k次。本文介绍了如何在YOLOv8中使用GhostnetV2进行模型轻量化，通过Ghost瓶颈和Ghost模块降低计算量和参数量，提升在资源受限环境下的应用性能。详细讲解了代码实现过程，包括添加模块、注册模块、配置yaml文件以及模型训练和验证。
+"> 
+  <link rel="stylesheet" type="text/css" href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-850e130245.min.css"> 
+  <style>
+        #content_views{
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none; 
+            user-select: none; 
+        }
+    </style>  
+  <link rel="stylesheet" type="text/css" href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-ink/skin-ink-a11cfdaac3.min.css">    
+  <meta name="toolbar" content="{&quot;type&quot;:&quot;0&quot;,&quot;fixModel&quot;:&quot;1&quot;}">    
+  <link rel="stylesheet" type="text/css" href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css"> 
+  <style>
+        .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+    </style>    
+ 	<style>
+	main div.blog-content-box pre {
+		max-height: 100%;
+		overflow-y: hidden;
+	}
+	</style>
+ </head>  
+ <body class="nodata  " style=""> 
+  <div id="toolbarBox" style="min-height: 48px;"></div>    
+  <link rel="stylesheet" href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css"> 
+  <link rel="stylesheet" href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css"> 
+  <link rel="stylesheet" href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css">   
+  <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;"> 
+   <div class="container clearfix container-concision" id="mainBox">  
+    <main>  
+     <div class="blog-content-box"> 
+      <div class="article-header-box"> 
+       <div class="article-header"> 
+        <div class="article-title-box"> 
+         <h1 class="title-article" id="articleContentId">【轻量化篇】YOLOv8改进实战 | 更换主干网络 Backbone 之 GhostnetV2</h1> 
+        </div> 
+        <div class="article-info-box"> 
+         <div class="article-bar-top"> 
+          <img class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png" alt=""> 
+          <div class="bar-content"> 
+           <a class="follow-nickName " href="https://blog.csdn.net/qq_45062768" target="_blank" rel="noopener" title="w94ghz">w94ghz</a> 
+           <img class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUpTime2.png" alt=""> 
+           <span class="time">已于&nbsp;2023-12-12 13:06:09&nbsp;修改</span> 
+           <div class="read-count-box"> 
+            <img class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png" alt=""> 
+            <span class="read-count">阅读量1.3k</span> 
+            <a id="blog_detail_zk_collection" class="un-collection" data-report-click="{&quot;mod&quot;:&quot;popu_823&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4232&quot;,&quot;ab&quot;:&quot;new&quot;}"> <img class="article-collect-img article-heard-img un-collect-status isdefault" style="display:inline-block" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" alt=""> <img class="article-collect-img article-heard-img collect-status isactive" style="display:none" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" alt=""> <span class="name">收藏</span> <span class="get-collection"> 8 </span> </a> 
+            <div class="read-count-box is-like"> 
+             <img class="article-read-img article-heard-img" style="display:none" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" alt=""> 
+             <img class="article-read-img article-heard-img" style="display:block" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" alt=""> 
+             <span class="read-count" id="blog-digg-num">点赞数 1 </span> 
+            </div> 
+           </div> 
+          </div> 
+         </div> 
+         <div class="blog-tags-box"> 
+          <div class="tags-box artic-tag-box"> 
+           <span class="label">分类专栏：</span> 
+           <a class="tag-link" href="https://blog.csdn.net/qq_45062768/category_12474694.html" target="_blank" rel="noopener"># YOLO轻量化改进</a> 
+           <a class="tag-link" href="https://blog.csdn.net/qq_45062768/category_12475400.html" target="_blank" rel="noopener">YOLOv8改进系列</a> 
+           <a class="tag-link" href="https://blog.csdn.net/qq_45062768/category_12436990.html" target="_blank" rel="noopener">YOLO改进系列</a> 
+           <span class="label">文章标签：</span> 
+           <a rel="noopener" data-report-query="spm=1001.2101.3001.4223" data-report-click="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;YOLO&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;YOLO\&quot;}&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;YOLO&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;YOLO\&quot;}&quot;}" class="tag-link" href="https://so.csdn.net/so/search/s.do?q=YOLO&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" target="_blank">YOLO</a> 
+           <a rel="noopener" data-report-query="spm=1001.2101.3001.4223" data-report-click="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;网络&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;网络\&quot;}&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;网络&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;网络\&quot;}&quot;}" class="tag-link" href="https://so.csdn.net/so/search/s.do?q=%E7%BD%91%E7%BB%9C&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" target="_blank">网络</a> 
+          </div> 
+         </div> 
+         <div class="up-time">
+          <span>于&nbsp;2023-10-20 14:51:34&nbsp;首次发布</span>
+         </div> 
+         <div class="slide-content-box"> 
+          <div class="article-copyright"> 
+           <div class="creativecommons">
+             版权声明：本文为博主原创文章，遵循
+            <a href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener"> CC 4.0 BY-SA </a>版权协议，转载请附上原文出处链接和本声明。 
+           </div> 
+           <div class="article-source-link">
+             本文链接：
+            <a href="https://blog.csdn.net/qq_45062768/article/details/133946135" target="_blank">https://blog.csdn.net/qq_45062768/article/details/133946135</a> 
+           </div> 
+          </div> 
+         </div> 
+         <div class="operating"> 
+          <a class="href-article-edit slide-toggle">版权</a> 
+         </div> 
+        </div> 
+       </div> 
+      </div> 
+      <div id="blogHuaweiyunAdvert"></div> 
+      <div id="blogColumnPayAdvert"> 
+       <div class="column-group"> 
+        <div class="column-group-item column-group0 "> 
+         <div class="item-l"> 
+          <a class="item-target" href="https://blog.csdn.net/qq_45062768/category_12436990.html" target="_blank" title="YOLO改进系列" data-report-view="{&quot;spm&quot;:&quot;1001.2101.3001.6332&quot;}" data-report-click="{&quot;spm&quot;:&quot;1001.2101.3001.6332&quot;}"> <img class="item-target" src="https://i-blog.csdnimg.cn/blog_column_migrate/f341ac8f91a72872128b9e7a79fd6b72.jpeg?x-oss-process=image/resize,m_fixed,h_224,w_224" alt=""> <span class="title item-target"> <span> <span class="tit">YOLO改进系列</span> <span class="dec more">同时被 3 个专栏收录<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/newArrowDown1White.png" alt=""></span> </span> </span> </a> 
+         </div> 
+         <div class="item-m"> 
+          <span>43 篇文章</span> 
+          <span class="old-add-new-box"> <span class="price">¥119.90</span> <span class="oldprice">¥299.90</span> </span> 
+         </div> 
+         <div class="item-r"> 
+          <a class="item-target article-column-subscribe">已订阅 </a> 
+          <a class="item-target column-studyvip-discount column-studyvip-pass" data-report-view="{&quot;spm&quot;:&quot;1001.2015.3001.8590&quot;}" data-report-click="{&quot;spm&quot;:&quot;1001.2015.3001.8590&quot;}">8折续费 </a> 
+         </div> 
+        </div> 
+        <div class="column-group-item column-group1 "> 
+         <div class="item-l"> 
+          <a class="item-target" href="https://blog.csdn.net/qq_45062768/category_12475400.html" target="_blank" title="YOLOv8改进系列" data-report-view="{&quot;spm&quot;:&quot;1001.2101.3001.6332&quot;}" data-report-click="{&quot;spm&quot;:&quot;1001.2101.3001.6332&quot;}"> <img class="item-target" src="https://i-blog.csdnimg.cn/direct/d9d54bf624bf4c1187e4d5043873c835.jpeg?x-oss-process=image/resize,m_fixed,h_224,w_224" alt=""> <span class="title item-target"> <span> <span class="tit">YOLOv8改进系列</span> </span> </span> </a> 
+         </div> 
+         <div class="item-m"> 
+          <span>27 篇文章</span> 
+          <span class="old-add-new-box"> <span class="price">¥59.90</span> <span class="oldprice">¥99.00</span> </span> 
+         </div> 
+         <div class="item-r"> 
+          <a class="item-target article-column-bt articleColumnBt" data-id="12475400" data-price="59.90" data-sum="27" data-people="2" data-hotrank="0" data-oldprice="99.00" data-report-view="{&quot;spm&quot;:&quot;1001.2101.3001.6333&quot;}" data-report-click="{&quot;spm&quot;:&quot;1001.2101.3001.6333&quot;}">订阅专栏</a> 
+         </div> 
+        </div> 
+        <div class="column-group-item column-group2 "> 
+         <div class="item-l"> 
+          <a class="item-target" href="https://blog.csdn.net/qq_45062768/category_12474694.html" target="_blank" title="YOLO轻量化改进" data-report-view="{&quot;spm&quot;:&quot;1001.2101.3001.6332&quot;}" data-report-click="{&quot;spm&quot;:&quot;1001.2101.3001.6332&quot;}"> <img class="item-target" src="https://i-blog.csdnimg.cn/blog_column_migrate/21d8d1f2c30673ed6b05063fe13190e0.jpeg?x-oss-process=image/resize,m_fixed,h_224,w_224" alt=""> <span class="title item-target"> <span> <span class="tit">YOLO轻量化改进</span> </span> </span> </a> 
+         </div> 
+         <div class="item-m"> 
+          <span>16 篇文章</span> 
+          <span class="old-add-new-box"> <span class="price">¥59.90</span> <span class="oldprice">¥99.00</span> </span> 
+         </div> 
+         <div class="item-r"> 
+          <a class="item-target article-column-subscribe" style="display:none" data-type="true" data-id="12474694"> 会员已订阅 </a> 
+          <a style="display:inline-block" class="item-target column-studyvip-free studyvip-unsubscribe column-studyvip-ajax" data-type="false" data-id="12474694"> <img class="item-target column-studyvip-icon" src="https://csdnimg.cn/release/blogv2/dist/components/img/studyVipIcon.png">会员免费订 </a> 
+          <a class="item-target column-studyvip-discount column-studyvip-pass" data-report-view="{&quot;spm&quot;:&quot;1001.2015.3001.8590&quot;}" data-report-click="{&quot;spm&quot;:&quot;1001.2015.3001.8590&quot;}">8折续费 </a> 
+         </div> 
+        </div> 
+       </div> 
+      </div> 
+      <div class="learning_the_member_box"> 
+       <a href="https://www.csdn.net/vip?utm_source=bkzl_cjhy_ckqy" target="_blank"> 
+        <div class="left">
+         <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/iconVIpCrown.png" alt="">
+         <span>您已是超级会员，正在免费阅读会员专享内容</span>
+        </div> 
+        <div class="right">
+         <span>查看更多超级会员权益</span>
+         <img src="https://csdnimg.cn/release/blogv2/dist/components/img/vipIconArrowLeftWhite.png" alt="">
+        </div> </a> 
+      </div> 
+      <div class="ai-abstract-box"> 
+       <div class="ai-abstract"> 
+        <div class="abstract-content"> 
+         <img class="lock-img" src="https://img-home.csdnimg.cn/images/20240711042549.png" alt=""> 本文介绍了如何在YOLOv8中使用GhostnetV2进行模型轻量化，通过Ghost瓶颈和Ghost模块降低计算量和参数量，提升在资源受限环境下的应用性能。详细讲解了代码实现过程，包括添加模块、注册模块、配置yaml文件以及模型训练和验证。 
+        </div> 
+        <span>摘要由CSDN通过智能技术生成</span> 
+       </div> 
+      </div> 
+      <article class="baidu_pl"> 
+       <div id="article_content" class="article_content clearfix"> 
+        <link rel="stylesheet" href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css"> 
+        <link rel="stylesheet" href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css"> 
+        <div id="content_views" class="markdown_views prism-atom-one-dark"> 
+         <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"> 
+          <path stroke-linecap="round" d="M5,0 0,2.5 5,5z" id="raphael-marker-block" style="-webkit-tap-highlight-color: rgba(0, 0, 0, 0);"></path> 
+         </svg> 
+         <hr> 
+         <p><img src="https://img-blog.csdnimg.cn/45aee293cc884b3394273a5b285b022c.png#pic_center" alt="在这里插入图片描述" width="900" height="500"></p> 
+         <hr> 
+         <p><font size="6"><strong>前言</strong></font></p> 
+         <p><strong>轻量化网络设计</strong>是一种针对移动设备等资源受限环境的深度学习模型设计方法。下面是一些常见的轻量化网络设计方法：</p> 
+         <ol>
+          <li><strong>网络剪枝</strong>：移除神经网络中冗余的连接和参数，以达到模型压缩和加速的目的。</li>
+          <li><strong>分组卷积</strong>：将卷积操作分解为若干个较小的卷积操作，并将它们分别作用于输入的不同通道，从而减少计算量。</li>
+          <li><strong>深度可分离卷积</strong>：将标准卷积分解成深度卷积和逐点卷积两个步骤，使得在大部分情况下可以大幅减少计算量。</li>
+          <li><strong>跨层连接</strong>：通过跨越多个层级的连接方式来增加神经网络的深度和复杂性，同时减少了需要训练的参数数量。</li>
+          <li><strong>模块化设计</strong>：将神经网络分解为多个可重复使用的模块，以提高模型的可调节性和适应性。</li>
+         </ol> 
+         <p>传统的<strong>YOLOv8</strong>系列中，<strong>Backbone</strong>采用的是较为复杂的<strong>C2f</strong>网络结构，这使得模型计算量大幅度的增加，检测速度较慢，应用受限，在某些真实的应用场景如移动或者嵌入式设备，如此大而复杂的模型时难以被应用的。为了解决这个问题，本章节通过采用<font color="DeepSkyBlue"><strong>Ghostnet</strong></font>轻量化主干网络作为<strong>Backbone</strong>的基础结构，从而在保证检测性能的同时，将网络结构精简到最小，大大减小了模型的参数量和计算量。</p> 
+         <p></p> 
+         <div class="toc"> 
+          <h4>目录</h4> 
+          <ul>
+           <li><a href="#Ghostnet_18" rel="nofollow">一、Ghostnet</a></li>
+           <li><a href="#_90" rel="nofollow">二、代码实现</a></li>
+           <li>
+            <ul>
+             <li><a href="#21__91" rel="nofollow">2.1 添加模块</a></li>
+             <li><a href="#22__152" rel="nofollow">2.2 注册模块</a></li>
+             <li><a href="#23_yaml_191" rel="nofollow">2.3 配置yaml文件</a></li>
+             <li>
+              <ul>
+               <li><a href="#yolov8ghostnetv2yaml_193" rel="nofollow">yolov8-ghostnetv2.yaml</a></li>
+              </ul> </li>
+             <li><a href="#23__242" rel="nofollow">2.3 模型验证</a></li>
+             <li><a href="#24__253" rel="nofollow">2.4 模型训练</a></li>
+             <li><a href="#25__267" rel="nofollow">2.5 模型对比</a></li>
+            </ul> </li>
+           <li><a href="#_275" rel="nofollow">三、总结</a></li>
+          </ul> 
+         </div> 
+         <p></p> 
+         <h2><a id="Ghostnet_18"></a>一、Ghostnet</h2> 
+         <blockquote> 
+          <p>2020 CVPR 论文链接：<a href="https://arxiv.org/abs/1911.11907" rel="nofollow"><strong>GhostNet: More Features from Cheap Operations</strong></a><br> Pytorch code：<a href="https://github.com/huawei-noah/CV-backbones/tree/master/ghostnet_pytorch"><strong>ghostnet_pytorch</strong></a></p> 
+         </blockquote> 
+         <p>轻量级神经网络<font color="DeepSkyBlue"><strong>Ghostnet</strong></font>是专门为移动设备上的应用而设计的，由<strong>Ghost bottleneck</strong>搭建而成，而<strong>Ghost bottleneck</strong>通过<strong>Ghost</strong>模块堆叠。<strong>Ghost</strong> 模块是一种新颖的即插即用模块。<strong>Ghost</strong> 模块设计的初衷是<strong>使用更少的参数来生成更多特征图</strong> (generate more features by using fewer parameters)。在ImageNet分类任务，GhostNet在相似计算量情况下Top-1正确率达75.7%，高于MobileNetV3的75.2%。<br> <img src="https://i-blog.csdnimg.cn/blog_migrate/6b584899c5d6dd6ccf5bc99a5b82cec6.png#pic_center" alt="在这里插入图片描述"></p> 
+         <ul>
+          <li> <p><font color="LightSeaGreen"><strong>GhostConvV2</strong></font></p> <pre><code  style="height: 50vh;" class="prism language-python"><span class="token keyword">import</span> torch<span class="token punctuation">.</span>nn<span class="token punctuation">.</span>functional <span class="token keyword">as</span> F
+<span class="token keyword">class</span> <span class="token class-name">GhostConvV2</span><span class="token punctuation">(</span>nn<span class="token punctuation">.</span>Module<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># Ghostv2 Convolution https://github.com/huawei-noah/Efficient-AI-Backbones/tree/master/ghostnetv2_pytorch</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> k<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> s<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> g<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> act<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>  <span class="token comment"># ch_in, ch_out, kernel, stride, groups</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span>GhostConvV2<span class="token punctuation">,</span> self<span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        c_ <span class="token operator">=</span> c2 <span class="token operator">//</span> <span class="token number">2</span>  <span class="token comment"># hidden channels</span>
+        self<span class="token punctuation">.</span>cv1 <span class="token operator">=</span> Conv<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c_<span class="token punctuation">,</span> k<span class="token punctuation">,</span> s<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span> g<span class="token punctuation">,</span> act<span class="token operator">=</span>act<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>cv2 <span class="token operator">=</span> Conv<span class="token punctuation">(</span>c_<span class="token punctuation">,</span> c_<span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span> c_<span class="token punctuation">,</span> act<span class="token operator">=</span>act<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>mode <span class="token operator">=</span> mode
+        self<span class="token punctuation">.</span>gate_fn <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sigmoid<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>avg_pool <span class="token operator">=</span> nn<span class="token punctuation">.</span>AvgPool2d<span class="token punctuation">(</span>kernel_size<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">,</span> stride<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> mode <span class="token keyword">in</span> <span class="token punctuation">[</span><span class="token string">'attn'</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+             self<span class="token punctuation">.</span>short_conv <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span>
+                nn<span class="token punctuation">.</span>Conv2d<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> k<span class="token punctuation">,</span> s<span class="token punctuation">,</span> k <span class="token operator">//</span> <span class="token number">2</span><span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>BatchNorm2d<span class="token punctuation">(</span>c2<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>Conv2d<span class="token punctuation">(</span>c2<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> kernel_size<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> stride<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> padding<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> groups<span class="token operator">=</span>c2<span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>BatchNorm2d<span class="token punctuation">(</span>c2<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>Conv2d<span class="token punctuation">(</span>c2<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> kernel_size<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> stride<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> padding<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> groups<span class="token operator">=</span>c2<span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>BatchNorm2d<span class="token punctuation">(</span>c2<span class="token punctuation">)</span>
+                 <span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">forward</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> x<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        y <span class="token operator">=</span> self<span class="token punctuation">.</span>cv1<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>mode <span class="token keyword">in</span> <span class="token punctuation">[</span><span class="token string">'attn'</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+            <span class="token comment"># res = self.short_conv(F.avg_pool2d(x, kernel_size=2, stride=2))</span>
+            res <span class="token operator">=</span> self<span class="token punctuation">.</span>short_conv<span class="token punctuation">(</span>self<span class="token punctuation">.</span>avg_pool<span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token comment"># res=self.short_conv(x)</span>
+            out <span class="token operator">=</span> torch<span class="token punctuation">.</span>cat<span class="token punctuation">(</span><span class="token punctuation">(</span>y<span class="token punctuation">,</span> self<span class="token punctuation">.</span>cv2<span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span> out <span class="token operator">*</span> F<span class="token punctuation">.</span>interpolate<span class="token punctuation">(</span>self<span class="token punctuation">.</span>gate_fn<span class="token punctuation">(</span>res<span class="token punctuation">)</span><span class="token punctuation">,</span> size<span class="token operator">=</span><span class="token punctuation">(</span>out<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> out<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                       mode<span class="token operator">=</span><span class="token string">'nearest'</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> torch<span class="token punctuation">.</span>cat<span class="token punctuation">(</span><span class="token punctuation">(</span>y<span class="token punctuation">,</span> self<span class="token punctuation">.</span>cv2<span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+</code ></pre> </li>
+          <li> <p><font color="LightSeaGreen"><strong>GhostBottleneckV2</strong></font>（需要自己添加）</p> <pre><code  style="height: 50vh;" class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">GhostBottleneckV2</span><span class="token punctuation">(</span>nn<span class="token punctuation">.</span>Module<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># Ghostv2 Convolution https://github.com/huawei-noah/Efficient-AI-Backbones/tree/master/ghostnetv2_pytorch</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> k<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span> s<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span>  <span class="token comment"># ch_in, ch_out, kernel, stride</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        c_ <span class="token operator">=</span> c2 <span class="token operator">//</span> <span class="token number">2</span>
+        self<span class="token punctuation">.</span>conv <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span>
+            GhostConvV2<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c_<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token string">'attn'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># pw</span>
+            DWConv<span class="token punctuation">(</span>c_<span class="token punctuation">,</span> c_<span class="token punctuation">,</span> k<span class="token punctuation">,</span> s<span class="token punctuation">,</span> act<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span> <span class="token keyword">if</span> s <span class="token operator">==</span> <span class="token number">2</span> <span class="token keyword">else</span> nn<span class="token punctuation">.</span>Identity<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># dw</span>
+            GhostConvV2<span class="token punctuation">(</span>c_<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> act<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># pw-linear</span>
+        self<span class="token punctuation">.</span>shortcut <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span>DWConv<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c1<span class="token punctuation">,</span> k<span class="token punctuation">,</span> s<span class="token punctuation">,</span> act<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Conv<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span>
+                                                                            act<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">if</span> s <span class="token operator">==</span> <span class="token number">2</span> <span class="token keyword">else</span> nn<span class="token punctuation">.</span>Identity<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">forward</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> x<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>conv<span class="token punctuation">(</span>x<span class="token punctuation">)</span> <span class="token operator">+</span> self<span class="token punctuation">.</span>shortcut<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+</code ></pre> </li>
+          <li> <p><font color="LightSeaGreen"><strong>C2fGhostV2</strong></font>（需要自己添加）</p> <pre><code class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">C2fGhostV2</span><span class="token punctuation">(</span>C2f<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># C2f module with Ghostv2Bottleneck()</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> n<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> shortcut<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> g<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> e<span class="token operator">=</span><span class="token number">0.5</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> n<span class="token punctuation">,</span> shortcut<span class="token punctuation">,</span> g<span class="token punctuation">,</span> e<span class="token punctuation">)</span>
+        c_ <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>c2 <span class="token operator">*</span> e<span class="token punctuation">)</span>  <span class="token comment"># hidden channels</span>
+        self<span class="token punctuation">.</span>m <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">(</span>GhostBottleneckV2<span class="token punctuation">(</span>c_<span class="token punctuation">,</span> c_<span class="token punctuation">)</span> <span class="token keyword">for</span> _ <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code ></pre> </li>
+         </ul> 
+         <h2><a id="_90"></a>二、代码实现</h2> 
+         <h3><a id="21__91"></a>2.1 添加模块</h3> 
+         <p>在<code>ultralytics/nn/modules/block.py</code >文件中加入以下代码：</p> 
+         <pre><code  style="height: 50vh;" class="prism language-python"><span class="token keyword">import</span> torch<span class="token punctuation">.</span>nn<span class="token punctuation">.</span>functional <span class="token keyword">as</span> F
+<span class="token keyword">class</span> <span class="token class-name">GhostConvV2</span><span class="token punctuation">(</span>nn<span class="token punctuation">.</span>Module<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># Ghostv2 Convolution https://github.com/huawei-noah/Efficient-AI-Backbones/tree/master/ghostnetv2_pytorch</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> k<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> s<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> g<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> act<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>  <span class="token comment"># ch_in, ch_out, kernel, stride, groups</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span>GhostConvV2<span class="token punctuation">,</span> self<span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        c_ <span class="token operator">=</span> c2 <span class="token operator">//</span> <span class="token number">2</span>  <span class="token comment"># hidden channels</span>
+        self<span class="token punctuation">.</span>cv1 <span class="token operator">=</span> Conv<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c_<span class="token punctuation">,</span> k<span class="token punctuation">,</span> s<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span> g<span class="token punctuation">,</span> act<span class="token operator">=</span>act<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>cv2 <span class="token operator">=</span> Conv<span class="token punctuation">(</span>c_<span class="token punctuation">,</span> c_<span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span> c_<span class="token punctuation">,</span> act<span class="token operator">=</span>act<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>mode <span class="token operator">=</span> mode
+        self<span class="token punctuation">.</span>gate_fn <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sigmoid<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>avg_pool <span class="token operator">=</span> nn<span class="token punctuation">.</span>AvgPool2d<span class="token punctuation">(</span>kernel_size<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">,</span> stride<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> mode <span class="token keyword">in</span> <span class="token punctuation">[</span><span class="token string">'attn'</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+             self<span class="token punctuation">.</span>short_conv <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span>
+                nn<span class="token punctuation">.</span>Conv2d<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> k<span class="token punctuation">,</span> s<span class="token punctuation">,</span> k <span class="token operator">//</span> <span class="token number">2</span><span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>BatchNorm2d<span class="token punctuation">(</span>c2<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>Conv2d<span class="token punctuation">(</span>c2<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> kernel_size<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> stride<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> padding<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> groups<span class="token operator">=</span>c2<span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>BatchNorm2d<span class="token punctuation">(</span>c2<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>Conv2d<span class="token punctuation">(</span>c2<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> kernel_size<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> stride<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> padding<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> groups<span class="token operator">=</span>c2<span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                nn<span class="token punctuation">.</span>BatchNorm2d<span class="token punctuation">(</span>c2<span class="token punctuation">)</span>
+                 <span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">forward</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> x<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        y <span class="token operator">=</span> self<span class="token punctuation">.</span>cv1<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>mode <span class="token keyword">in</span> <span class="token punctuation">[</span><span class="token string">'attn'</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+            <span class="token comment"># res = self.short_conv(F.avg_pool2d(x, kernel_size=2, stride=2))</span>
+            res <span class="token operator">=</span> self<span class="token punctuation">.</span>short_conv<span class="token punctuation">(</span>self<span class="token punctuation">.</span>avg_pool<span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token comment"># res=self.short_conv(x)</span>
+            out <span class="token operator">=</span> torch<span class="token punctuation">.</span>cat<span class="token punctuation">(</span><span class="token punctuation">(</span>y<span class="token punctuation">,</span> self<span class="token punctuation">.</span>cv2<span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span> out <span class="token operator">*</span> F<span class="token punctuation">.</span>interpolate<span class="token punctuation">(</span>self<span class="token punctuation">.</span>gate_fn<span class="token punctuation">(</span>res<span class="token punctuation">)</span><span class="token punctuation">,</span> size<span class="token operator">=</span><span class="token punctuation">(</span>out<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> out<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                       mode<span class="token operator">=</span><span class="token string">'nearest'</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> torch<span class="token punctuation">.</span>cat<span class="token punctuation">(</span><span class="token punctuation">(</span>y<span class="token punctuation">,</span> self<span class="token punctuation">.</span>cv2<span class="token punctuation">(</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">GhostBottleneckV2</span><span class="token punctuation">(</span>nn<span class="token punctuation">.</span>Module<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># Ghostv2 Convolution https://github.com/huawei-noah/Efficient-AI-Backbones/tree/master/ghostnetv2_pytorch</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> k<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span> s<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span>  <span class="token comment"># ch_in, ch_out, kernel, stride</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        c_ <span class="token operator">=</span> c2 <span class="token operator">//</span> <span class="token number">2</span>
+        self<span class="token punctuation">.</span>conv <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span>
+            GhostConvV2<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c_<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token string">'attn'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># pw</span>
+            DWConv<span class="token punctuation">(</span>c_<span class="token punctuation">,</span> c_<span class="token punctuation">,</span> k<span class="token punctuation">,</span> s<span class="token punctuation">,</span> act<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span> <span class="token keyword">if</span> s <span class="token operator">==</span> <span class="token number">2</span> <span class="token keyword">else</span> nn<span class="token punctuation">.</span>Identity<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># dw</span>
+            GhostConvV2<span class="token punctuation">(</span>c_<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> act<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># pw-linear</span>
+        self<span class="token punctuation">.</span>shortcut <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span>DWConv<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c1<span class="token punctuation">,</span> k<span class="token punctuation">,</span> s<span class="token punctuation">,</span> act<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span> Conv<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span>
+                                                                            act<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">if</span> s <span class="token operator">==</span> <span class="token number">2</span> <span class="token keyword">else</span> nn<span class="token punctuation">.</span>Identity<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">forward</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> x<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>conv<span class="token punctuation">(</span>x<span class="token punctuation">)</span> <span class="token operator">+</span> self<span class="token punctuation">.</span>shortcut<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">C2fGhostV2</span><span class="token punctuation">(</span>C2f<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># C2f module with Ghostv2Bottleneck()</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> n<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> shortcut<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> g<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> e<span class="token operator">=</span><span class="token number">0.5</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span>c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> n<span class="token punctuation">,</span> shortcut<span class="token punctuation">,</span> g<span class="token punctuation">,</span> e<span class="token punctuation">)</span>
+        c_ <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>c2 <span class="token operator">*</span> e<span class="token punctuation">)</span>  <span class="token comment"># hidden channels</span>
+        self<span class="token punctuation">.</span>m <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">(</span>GhostBottleneckV2<span class="token punctuation">(</span>c_<span class="token punctuation">,</span> c_<span class="token punctuation">)</span> <span class="token keyword">for</span> _ <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code ></pre> 
+         <h3><a id="22__152"></a>2.2 注册模块</h3> 
+         <p>修改<code>ultralytics/nn/modules/__init__.py</code >文件：</p> 
+         <pre><code class="prism language-python"><span class="token keyword">from</span> <span class="token punctuation">.</span>block <span class="token keyword">import</span> <span class="token punctuation">(</span>ASFF2<span class="token punctuation">,</span> ASFF3<span class="token punctuation">,</span> C1<span class="token punctuation">,</span> C2<span class="token punctuation">,</span> C3<span class="token punctuation">,</span> C3TR<span class="token punctuation">,</span> DFL<span class="token punctuation">,</span> SPP<span class="token punctuation">,</span> SPPF<span class="token punctuation">,</span> Bottleneck<span class="token punctuation">,</span> BottleneckCSP<span class="token punctuation">,</span> C2f<span class="token punctuation">,</span> C3Ghost<span class="token punctuation">,</span> C3x<span class="token punctuation">,</span>
+                    GhostBottleneck<span class="token punctuation">,</span> HGBlock<span class="token punctuation">,</span> HGStem<span class="token punctuation">,</span> Proto<span class="token punctuation">,</span> RepC3<span class="token punctuation">,</span> GhostConvV2<span class="token punctuation">,</span> C2fGhostV2<span class="token punctuation">)</span>
+</code ></pre> 
+         <pre><code class="prism language-python">__all__ <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token string">'Conv'</span><span class="token punctuation">,</span> <span class="token string">'Conv2'</span><span class="token punctuation">,</span> <span class="token string">'LightConv'</span><span class="token punctuation">,</span> <span class="token string">'RepConv'</span><span class="token punctuation">,</span> <span class="token string">'DWConv'</span><span class="token punctuation">,</span> <span class="token string">'DWConvTranspose2d'</span><span class="token punctuation">,</span> <span class="token string">'ConvTranspose'</span><span class="token punctuation">,</span> <span class="token string">'Focus'</span><span class="token punctuation">,</span>
+           <span class="token string">'GhostConv'</span><span class="token punctuation">,</span> <span class="token string">'ChannelAttention'</span><span class="token punctuation">,</span> <span class="token string">'SpatialAttention'</span><span class="token punctuation">,</span> <span class="token string">'CBAM'</span><span class="token punctuation">,</span> <span class="token string">'Concat'</span><span class="token punctuation">,</span> <span class="token string">'TransformerLayer'</span><span class="token punctuation">,</span>
+           <span class="token string">'TransformerBlock'</span><span class="token punctuation">,</span> <span class="token string">'MLPBlock'</span><span class="token punctuation">,</span> <span class="token string">'LayerNorm2d'</span><span class="token punctuation">,</span> <span class="token string">'DFL'</span><span class="token punctuation">,</span> <span class="token string">'HGBlock'</span><span class="token punctuation">,</span> <span class="token string">'HGStem'</span><span class="token punctuation">,</span> <span class="token string">'SPP'</span><span class="token punctuation">,</span> <span class="token string">'SPPF'</span><span class="token punctuation">,</span> <span class="token string">'C1'</span><span class="token punctuation">,</span> <span class="token string">'C2'</span><span class="token punctuation">,</span> <span class="token string">'C3'</span><span class="token punctuation">,</span>
+           <span class="token string">'C2f'</span><span class="token punctuation">,</span> <span class="token string">'C3x'</span><span class="token punctuation">,</span> <span class="token string">'C3TR'</span><span class="token punctuation">,</span> <span class="token string">'C3Ghost'</span><span class="token punctuation">,</span> <span class="token string">'GhostBottleneck'</span><span class="token punctuation">,</span> <span class="token string">'Bottleneck'</span><span class="token punctuation">,</span> <span class="token string">'BottleneckCSP'</span><span class="token punctuation">,</span> <span class="token string">'Proto'</span><span class="token punctuation">,</span> <span class="token string">'Detect'</span><span class="token punctuation">,</span>
+           <span class="token string">'Segment'</span><span class="token punctuation">,</span> <span class="token string">'Pose'</span><span class="token punctuation">,</span> <span class="token string">'Classify'</span><span class="token punctuation">,</span> <span class="token string">'TransformerEncoderLayer'</span><span class="token punctuation">,</span> <span class="token string">'RepC3'</span><span class="token punctuation">,</span> <span class="token string">'RTDETRDecoder'</span><span class="token punctuation">,</span> <span class="token string">'AIFI'</span><span class="token punctuation">,</span>
+           <span class="token string">'DeformableTransformerDecoder'</span><span class="token punctuation">,</span> <span class="token string">'DeformableTransformerDecoderLayer'</span><span class="token punctuation">,</span> <span class="token string">'MSDeformAttn'</span><span class="token punctuation">,</span> <span class="token string">'MLP'</span><span class="token punctuation">,</span> <span class="token string">'ASFF2'</span><span class="token punctuation">,</span> <span class="token string">'ASFF3'</span><span class="token punctuation">,</span>
+           <span class="token string">'GhostConvV2'</span><span class="token punctuation">,</span> <span class="token string">'C2fGhostV2'</span><span class="token punctuation">)</span>
+</code ></pre> 
+         <p>修改<code>ultralytics/nn/tasks.py</code >文件中的<code>parse_model</code >函数：</p> 
+         <pre><code class="prism language-python"><span class="token keyword">from</span> ultralytics<span class="token punctuation">.</span>nn<span class="token punctuation">.</span>modules <span class="token keyword">import</span> <span class="token punctuation">(</span>AIFI<span class="token punctuation">,</span> ASFF2<span class="token punctuation">,</span> ASFF3<span class="token punctuation">,</span> C1<span class="token punctuation">,</span> C2<span class="token punctuation">,</span> C3<span class="token punctuation">,</span> C3TR<span class="token punctuation">,</span> SPP<span class="token punctuation">,</span> SPPF<span class="token punctuation">,</span> Bottleneck<span class="token punctuation">,</span> BottleneckCSP<span class="token punctuation">,</span> C2f<span class="token punctuation">,</span>
+                                    C3Ghost<span class="token punctuation">,</span> C3x<span class="token punctuation">,</span> Classify<span class="token punctuation">,</span> Concat<span class="token punctuation">,</span> Conv<span class="token punctuation">,</span> Conv2<span class="token punctuation">,</span> ConvTranspose<span class="token punctuation">,</span> Detect<span class="token punctuation">,</span> DWConv<span class="token punctuation">,</span>
+                                    DWConvTranspose2d<span class="token punctuation">,</span> Focus<span class="token punctuation">,</span> GhostBottleneck<span class="token punctuation">,</span> GhostConv<span class="token punctuation">,</span> HGBlock<span class="token punctuation">,</span> HGStem<span class="token punctuation">,</span> Pose<span class="token punctuation">,</span> RepC3<span class="token punctuation">,</span>
+                                    RepConv<span class="token punctuation">,</span> RTDETRDecoder<span class="token punctuation">,</span> Segment<span class="token punctuation">,</span> C2fGhostV2<span class="token punctuation">,</span> GhostConvV2<span class="token punctuation">)</span>
+</code ></pre> 
+         <pre><code class="prism language-python"><span class="token keyword">if</span> m <span class="token keyword">in</span> <span class="token punctuation">(</span>Classify<span class="token punctuation">,</span> Conv<span class="token punctuation">,</span> ConvTranspose<span class="token punctuation">,</span> GhostConv<span class="token punctuation">,</span> Bottleneck<span class="token punctuation">,</span> GhostBottleneck<span class="token punctuation">,</span> SPP<span class="token punctuation">,</span> SPPF<span class="token punctuation">,</span> DWConv<span class="token punctuation">,</span> Focus<span class="token punctuation">,</span>
+         BottleneckCSP<span class="token punctuation">,</span> C1<span class="token punctuation">,</span> C2<span class="token punctuation">,</span> C2f<span class="token punctuation">,</span> C3<span class="token punctuation">,</span> C3TR<span class="token punctuation">,</span> C3Ghost<span class="token punctuation">,</span> nn<span class="token punctuation">.</span>ConvTranspose2d<span class="token punctuation">,</span> DWConvTranspose2d<span class="token punctuation">,</span> C3x<span class="token punctuation">,</span> RepC3<span class="token punctuation">,</span>
+         C2fGhostV2<span class="token punctuation">,</span> GhostConvV2<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    c1<span class="token punctuation">,</span> c2 <span class="token operator">=</span> ch<span class="token punctuation">[</span>f<span class="token punctuation">]</span><span class="token punctuation">,</span> args<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    <span class="token keyword">if</span> c2 <span class="token operator">!=</span> nc<span class="token punctuation">:</span>  <span class="token comment"># if c2 not equal to number of classes (i.e. for Classify() output)</span>
+        c2 <span class="token operator">=</span> make_divisible<span class="token punctuation">(</span><span class="token builtin">min</span><span class="token punctuation">(</span>c2<span class="token punctuation">,</span> max_channels<span class="token punctuation">)</span> <span class="token operator">*</span> width<span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span>
+
+    args <span class="token operator">=</span> <span class="token punctuation">[</span>c1<span class="token punctuation">,</span> c2<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+    <span class="token keyword">if</span> m <span class="token keyword">in</span> <span class="token punctuation">(</span>BottleneckCSP<span class="token punctuation">,</span> C1<span class="token punctuation">,</span> C2<span class="token punctuation">,</span> C2f<span class="token punctuation">,</span> C3<span class="token punctuation">,</span> C3TR<span class="token punctuation">,</span> C3Ghost<span class="token punctuation">,</span> C3x<span class="token punctuation">,</span> RepC3<span class="token punctuation">,</span> C2fGhost<span class="token punctuation">,</span> C2fGhostV2<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        args<span class="token punctuation">.</span>insert<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> n<span class="token punctuation">)</span>  <span class="token comment"># number of repeats</span>
+        n <span class="token operator">=</span> <span class="token number">1</span>
+</code ></pre> 
+         <h3><a id="23_yaml_191"></a>2.3 配置yaml文件</h3> 
+         <p>这里我们选择替换<strong>Backbone</strong>中的所有<code>Conv</code >和<code>C2f</code >模块。当然也可以将所有<code>Conv</code >和<code>C2f</code >模块全部替换掉，哪个效果更好，需要各位去实测一番。</p> 
+         <h4><a id="yolov8ghostnetv2yaml_193"></a>yolov8-ghostnetv2.yaml</h4> 
+         <pre><code  style="height: 50vh;" class="prism language-python"><span class="token comment"># Ultralytics YOLO 🚀, AGPL-3.0 license</span>
+<span class="token comment"># YOLOv8 object detection model with P3-P5 outputs. For Usage examples see https://docs.ultralytics.com/tasks/detect</span>
+
+<span class="token comment"># Parameters</span>
+nc<span class="token punctuation">:</span> <span class="token number">80</span>  <span class="token comment"># number of classes</span>
+scales<span class="token punctuation">:</span> <span class="token comment"># model compound scaling constants, i.e. 'model=yolov8n.yaml' will call yolov8.yaml with scale 'n'</span>
+  <span class="token comment"># [depth, width, max_channels]</span>
+  n<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token number">0.33</span><span class="token punctuation">,</span> <span class="token number">0.25</span><span class="token punctuation">,</span> <span class="token number">1024</span><span class="token punctuation">]</span>  <span class="token comment"># YOLOv8n summary: 225 layers,  3157200 parameters,  3157184 gradients,   8.9 GFLOPs</span>
+  s<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token number">0.33</span><span class="token punctuation">,</span> <span class="token number">0.50</span><span class="token punctuation">,</span> <span class="token number">1024</span><span class="token punctuation">]</span>  <span class="token comment"># YOLOv8s summary: 225 layers, 11166560 parameters, 11166544 gradients,  28.8 GFLOPs</span>
+  m<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token number">0.67</span><span class="token punctuation">,</span> <span class="token number">0.75</span><span class="token punctuation">,</span> <span class="token number">768</span><span class="token punctuation">]</span>   <span class="token comment"># YOLOv8m summary: 295 layers, 25902640 parameters, 25902624 gradients,  79.3 GFLOPs</span>
+  l<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token number">1.00</span><span class="token punctuation">,</span> <span class="token number">1.00</span><span class="token punctuation">,</span> <span class="token number">512</span><span class="token punctuation">]</span>   <span class="token comment"># YOLOv8l summary: 365 layers, 43691520 parameters, 43691504 gradients, 165.7 GFLOPs</span>
+  x<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token number">1.00</span><span class="token punctuation">,</span> <span class="token number">1.25</span><span class="token punctuation">,</span> <span class="token number">512</span><span class="token punctuation">]</span>   <span class="token comment"># YOLOv8x summary: 365 layers, 68229648 parameters, 68229632 gradients, 258.5 GFLOPs</span>
+
+<span class="token comment"># YOLOv8.0n backbone</span>
+backbone<span class="token punctuation">:</span>
+  <span class="token comment"># [from, repeats, module, args]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> Conv<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">64</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 0-P1/2</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> GhostConvV2<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 1-P2/4</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> C2fGhostV2<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">128</span><span class="token punctuation">,</span> <span class="token boolean">True</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> GhostConvV2<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">256</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 3-P3/8</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">,</span> C2fGhostV2<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">256</span><span class="token punctuation">,</span> <span class="token boolean">True</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> GhostConvV2<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">512</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 5-P4/16</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">,</span> C2fGhostV2<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">512</span><span class="token punctuation">,</span> <span class="token boolean">True</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> GhostConvV2<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1024</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 7-P5/32</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> C2fGhostV2<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1024</span><span class="token punctuation">,</span> <span class="token boolean">True</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> SPPF<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1024</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 9</span>
+
+<span class="token comment"># YOLOv8.0n head</span>
+head<span class="token punctuation">:</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> nn<span class="token punctuation">.</span>Upsample<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">'nearest'</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> Concat<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># cat backbone P4</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> C2f<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">512</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 12</span>
+
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> nn<span class="token punctuation">.</span>Upsample<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">'nearest'</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> Concat<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># cat backbone P3</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> C2f<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">256</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 15 (P3/8-small)</span>
+
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> Conv<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">256</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">12</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> Concat<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># cat head P4</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> C2f<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">512</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 18 (P4/16-medium)</span>
+
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> Conv<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">512</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">9</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> Concat<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># cat head P5</span>
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> C2f<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1024</span><span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># 21 (P5/32-large)</span>
+
+  <span class="token operator">-</span> <span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token number">15</span><span class="token punctuation">,</span> <span class="token number">18</span><span class="token punctuation">,</span> <span class="token number">21</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> Detect<span class="token punctuation">,</span> <span class="token punctuation">[</span>nc<span class="token punctuation">]</span><span class="token punctuation">]</span>  <span class="token comment"># Detect(P3, P4, P5)</span>
+</code ></pre> 
+         <h3><a id="23__242"></a>2.3 模型验证</h3> 
+         <pre><code class="prism language-python"><span class="token keyword">from</span> ultralytics <span class="token keyword">import</span> YOLO
+
+<span class="token comment"># Load a model</span>
+model <span class="token operator">=</span> YOLO<span class="token punctuation">(</span><span class="token string">"backbone/yolov8-ghostnet.yaml"</span><span class="token punctuation">)</span>  <span class="token comment"># build a new model from scratch</span>
+</code ></pre> 
+         <pre><code>YOLOv8-ghostnet summary: 323 layers, 2502908 parameters, 2502892 gradients, 7.1 GFLOPs
+</code ></pre> 
+         <h3><a id="24__253"></a>2.4 模型训练</h3> 
+         <pre><code class="prism language-python"><span class="token keyword">from</span> ultralytics <span class="token keyword">import</span> YOLO
+
+<span class="token comment"># Load a model</span>
+model <span class="token operator">=</span> YOLO<span class="token punctuation">(</span><span class="token string">"backbone/yolov8n-ghostnetv2.yaml"</span><span class="token punctuation">)</span>  <span class="token comment"># build a new model from scratch</span>
+
+<span class="token comment"># Use the model</span>
+model<span class="token punctuation">.</span>train<span class="token punctuation">(</span>
+    data<span class="token operator">=</span><span class="token string">"./mydata/data.yaml"</span><span class="token punctuation">,</span>
+    epochs<span class="token operator">=</span><span class="token number">300</span><span class="token punctuation">,</span>
+    batch<span class="token operator">=</span><span class="token number">48</span><span class="token punctuation">)</span>  <span class="token comment"># train the model</span>
+</code ></pre> 
+         <h3><a id="25__267"></a>2.5 模型对比</h3> 
+         <p>模型<strong>参数量和计算量对比</strong>（以自己实测为主，仅供参考）</p> 
+         <table>
+          <thead>
+           <tr>
+            <th align="center">模型</th>
+            <th align="center">参数量（parameters）</th>
+            <th align="center">计算量（GFLOPs）</th>
+           </tr>
+          </thead>
+          <tbody>
+           <tr>
+            <td align="center"><strong>YOLOv8n</strong></td>
+            <td align="center">3157200</td>
+            <td align="center">8.9</td>
+           </tr>
+           <tr>
+            <td align="center"><strong>YOLOv8n-GhostnetV2</strong></td>
+            <td align="center">2519052（<strong>↓20.21%</strong>）</td>
+            <td align="center">7.1（<strong>↓20.22%</strong>）</td>
+           </tr>
+          </tbody>
+         </table> 
+         <h2><a id="_275"></a>三、总结</h2> 
+         <ul>
+          <li>模型的训练具有很大的随机性，您可能需要点运气和更多的训练次数才能达到最高的 mAP。</li>
+         </ul> 
+         <p><img src="https://i-blog.csdnimg.cn/blog_migrate/9c8685de80fca7eb115702a3815cf3df.gif#pic_right" alt="在这里插入图片描述" width="100" height="100"></p> 
+        </div> 
+        <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-a5d25dd831.css" rel="stylesheet"> 
+        <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"> 
+       </div> 
+      </article>  
+     </div> 
+     <div class="directory-boxshadow-dialog" style="display:none;"> 
+      <div class="directory-boxshadow-dialog-box"> 
+      </div> 
+      <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new"> 
+       <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"> 
+       <div class="vip-limited-time-top">
+         确定要放弃本次机会？ 
+       </div> 
+       <span class="vip-limited-time-text">福利倒计时</span> 
+       <div class="limited-time-box-new"> 
+        <span class="time-hour"></span> 
+        <i>:</i> 
+        <span class="time-minite"></span> 
+        <i>:</i> 
+        <span class="time-second"></span> 
+       </div> 
+       <div class="limited-time-vip-box"> 
+        <p> <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"> <span class="def">立减 ¥</span> <span class="active limited-num"></span> </p> 
+        <span class="">普通VIP年卡可用</span> 
+       </div> 
+       <a class="limited-time-btn-new" href="https://mall.csdn.net/vip" data-report-click="{&quot;spm&quot;:&quot;1001.2101.3001.9621&quot;}" data-report-query="spm=1001.2101.3001.9621">立即使用</a> 
+      </div> 
+     </div> 
+     <div class="more-toolbox-new more-toolbar" id="toolBarBox"> 
+      <div class="left-toolbox"> 
+       <div class="toolbox-left"> 
+        <div class="profile-box"> 
+         <a class="profile-href" target="_blank" href="https://blog.csdn.net/qq_45062768"><img class="profile-img" src="https://profile-avatar.csdnimg.cn/6df5ef35eaf04070bd2b2f8953d97b28_qq_45062768.jpg!1"> <span class="profile-name"> w94ghz </span> </a> 
+        </div> 
+        <div class="profile-attend"> 
+         <a class="tool-attend tool-bt-button tool-unbt-attend" href="javascript:;" data-report-view="{&quot;mod&quot;:&quot;1592215036_002&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4232&quot;,&quot;extend1&quot;:&quot;已关注&quot;}">已关注</a> 
+         <a class="tool-item-follow active-animation" style="display:none;">关注</a> 
+        </div> 
+       </div> 
+       <div class="toolbox-middle"> 
+        <ul class="toolbox-list"> 
+         <li class="tool-item tool-item-size tool-active is-like" id="is-like"> <a class="tool-item-href"> <img style="display:none;" id="is-like-imgactive-animation-like" class="animation-dom active-animation" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarThumbUpactive.png" alt=""> <img class="isactive" style="display:none" id="is-like-imgactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/like-active.png" alt=""> <img class="isdefault" style="display:block" id="is-like-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/like.png" alt=""> <span id="spanCount" class="count "> 1 </span> </a> 
+          <div class="tool-hover-tip">
+           <span class="text space">点赞</span>
+          </div> </li> 
+         <li class="tool-item tool-item-size tool-active is-unlike" id="is-unlike"> <a class="tool-item-href"> <img class="isactive" style="margin-right:0px;display:none" id="is-unlike-imgactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/unlike-active.png" alt=""> <img class="isdefault" style="margin-right:0px;display:block" id="is-unlike-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/unlike.png" alt=""> <span id="unlikeCount" class="count "></span> </a> 
+          <div class="tool-hover-tip">
+           <span class="text space">踩</span>
+          </div> </li> 
+         <li class="tool-item tool-item-size tool-active is-collection "> <a class="tool-item-href" href="javascript:;" data-report-click="{&quot;mod&quot;:&quot;popu_824&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4130&quot;,&quot;ab&quot;:&quot;new&quot;}"> <img style="display:none" id="is-collection-img-collection" class="animation-dom active-animation" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/collect-active.png" alt=""> <img class="isdefault" id="is-collection-img" style="display:block" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/collect.png" alt=""> <img class="isactive" id="is-collection-imgactive" style="display:none" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCollectActive.png" alt=""> <span class="count get-collection " data-num="8" id="get-collection"> 8 </span> </a> 
+          <div class="tool-hover-tip collect"> 
+           <div class="collect-operate-box"> 
+            <span class="collect-text" id="is-collection"> 收藏 </span> 
+           </div> 
+          </div> 
+          <div class="tool-active-list"> 
+           <div class="text">
+             觉得还不错? 
+            <span class="collect-text" id="tool-active-list-collection"> 一键收藏 </span> 
+            <img id="tool-active-list-close" src="https://csdnimg.cn/release/blogv2/dist/pc/img/collectionCloseWhite.png" alt=""> 
+           </div> 
+          </div> </li> 
+         <li class="tool-item tool-item-size tool-active tool-item-comment"> 
+          <div class="guide-rr-first"> 
+           <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/guideRedReward01.png" alt=""> 
+           <button class="btn-guide-known">知道了</button> 
+          </div> <a class="tool-item-href go-side-comment" data-report-click="{&quot;spm&quot;:&quot;1001.2101.3001.7009&quot;}"> <img class="isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/comment.png" alt=""> <span class="count"> 4 </span> </a> 
+          <div class="tool-hover-tip">
+           <span class="text space">评论</span>
+          </div> </li> 
+         <li class="tool-item tool-item-size tool-active tool-QRcode" data-type="article" id="tool-share"> <a class="tool-item-href" href="javascript:;" data-report-view="{&quot;spm&quot;:&quot;3001.4129&quot;,&quot;extra&quot;:{&quot;type&quot;:&quot;blogdetail&quot;}}"> <img class="isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/share.png" alt=""> <span class="count">分享</span> </a> 
+          <div class="QRcode" id="tool-QRcode"> 
+           <div class="share-bg-box"> 
+            <div class="share-content"> 
+             <a id="copyPosterUrl" data-type="link" class="btn-share">复制链接</a> 
+            </div> 
+            <div class="share-content"> 
+             <a class="btn-share" data-type="qq">分享到 QQ</a> 
+            </div> 
+            <div class="share-content"> 
+             <a class="btn-share" data-type="weibo">分享到新浪微博</a> 
+            </div> 
+            <div class="share-code"> 
+             <div class="share-code-box" id="shareCode"></div> 
+             <div class="share-code-text"> 
+              <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/share/icon-wechat.png" alt="">扫一扫 
+             </div> 
+            </div> 
+           </div> 
+          </div> </li> 
+         <li class="tool-item tool-item-size tool-active tool-item-reward"> <a class="tool-item-href" href="javascript:;" data-report-click="{&quot;mod&quot;:&quot;popu_830&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4237&quot;,&quot;dest&quot;:&quot;&quot;,&quot;ab&quot;:&quot;new&quot;}"> <img class="isdefault reward-bt" id="rewardBtNew" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/reward.png" alt="打赏"> <span class="count">打赏</span> </a> 
+          <div class="tool-hover-tip">
+           <span class="text space">打赏</span>
+          </div> </li> 
+         <li class="tool-item tool-item-size tool-active is-more" id="is-more"> <a class="tool-item-href"> <img class="isdefault" style="margin-right:0px;display:block" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/more.png" alt=""> <span class="count"></span> </a> 
+          <div class="more-opt-box"> 
+           <div class="mini-box"> 
+            <a class="tool-item-href" id="rewardBtNewHide" data-report-click="{&quot;spm&quot;:&quot;3001.4237&quot;,&quot;extra&quot;:&quot;{\&quot;type\&quot;:\&quot;hide\&quot;}&quot;}"> <img class="isdefault reward-bt" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/reward.png" alt="打赏"> <span class="count">打赏</span> </a> 
+            <a class="tool-item-href" id="toolReportBtnHide"> <img class="isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/report.png" alt=""> <span class="count">举报</span> </a> 
+           </div> 
+           <div class="normal-box"> 
+            <a class="tool-item-href" id="toolReportBtnHideNormal"> <img class="isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/toolbar/report.png" alt=""> <span class="count">举报</span> </a> 
+           </div> 
+          </div> </li> 
+        </ul> 
+       </div> 
+       <div class="toolbox-right"> 
+        <div class="tool-directory"> 
+         <a class="bt-columnlist-show" data-id="12436990" data-free="false" data-description="🚀🚀全网最详细的YOLO入门实践+改进YOLOv5 YOLOv7进阶教程，主打实战，" data-subscribe="true" data-title="YOLO改进系列" data-img="https://i-blog.csdnimg.cn/blog_column_migrate/f341ac8f91a72872128b9e7a79fd6b72.jpeg?x-oss-process=image/resize,m_fixed,h_224,w_224" data-url="https://blog.csdn.net/qq_45062768/category_12436990.html" data-sum="43" data-people="15" data-price="119.90" data-hotrank="0" data-status="true" data-oldprice="299.90" data-join="true" data-studyvip="true" data-studysubscribe="true" data-report-view="{&quot;spm&quot;:&quot;1001.2101.3001.6334&quot;,&quot;extend1&quot;:&quot;专栏目录&quot;}" data-report-click="{&quot;spm&quot;:&quot;1001.2101.3001.6334&quot;,&quot;extend1&quot;:&quot;专栏目录&quot;}">专栏目录</a> 
+        </div> 
+        <div class="tool-column"> 
+         <a class="tool-bt-button tool-unbt-subscribe" href="javascript:;" data-report-view="{&quot;mod&quot;:&quot;1592215036_001&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4405&quot;,&quot;extend1&quot;:&quot;已订阅&quot;}" data-report-click="{&quot;mod&quot;:&quot;1592215036_001&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4405&quot;,&quot;extend1&quot;:&quot;已订阅&quot;}">已订阅</a> 
+        </div> 
+       </div> 
+      </div> 
+     </div>   
+     <a id="commentBox" name="commentBox"></a> 
+     <div id="pcCommentBox" class="comment-box comment-box-new2 login-comment-box-new" style="display:none"> 
+      <div class="has-comment" style="display:block"> 
+       <div class="one-line-box"> 
+        <div class="has-comment-tit go-side-comment"> 
+         <span class="count">4</span>&nbsp;条评论 
+        </div> 
+        <div class="has-comment-con comment-operate-item"></div> 
+        <a class="has-comment-bt-right go-side-comment focus">写评论</a> 
+       </div> 
+      </div> 
+     </div> 
+     <div class="first-recommend-box recommend-box recommend-highlight-default"> 
+      <div class="recommend-item-box type_blog clearfix" data-url="https://abc616.blog.csdn.net/article/details/136977059" data-report-view="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6661.1&quot;,&quot;mod&quot;:&quot;popu_871&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant_t0.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-136977059-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;1&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://abc616.blog.csdn.net/article/details/136977059&quot;}"> 
+       <div class="content-box"> 
+        <div class="content-blog display-flex"> 
+         <div class="title-box"> 
+          <span class="type"> <img src="https://csdnimg.cn/release/blogv2/dist/components/img/blogType.png" alt=""> <span class="tip">博客</span> </span> 
+          <a href="https://abc616.blog.csdn.net/article/details/136977059" class="tit" target="_blank" data-report-click="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6661.1&quot;,&quot;mod&quot;:&quot;popu_871&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant_t0.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-136977059-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;1&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://abc616.blog.csdn.net/article/details/136977059&quot;}" data-report-query="spm=1001.2101.3001.6661.1&amp;utm_medium=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-1-136977059-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9&amp;depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-1-136977059-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9"> 
+           <div class="left ellipsis-online ellipsis-online-1">
+            <em>主干</em>
+            <em>网络</em>
+            <em>篇</em> | 
+            <em>YOLO</em>
+            <em>v8</em>
+            <em>更换</em>
+            <em>主干</em>
+            <em>网络</em>之
+            <em>Ghost</em>Net
+           </div> </a> 
+         </div> 
+         <div class="info-box display-flex"> 
+          <div class="info"> 
+           <a href="https://blog.csdn.net/weixin_61961691" target="_blank"><span class="blog-title">突然好想你</span></a> 
+          </div> 
+          <div class="info display-flex"> 
+           <span class="info-block time">03-23</span> 
+           <span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> 1149 </span> 
+          </div> 
+         </div> 
+        </div> 
+        <div class="desc-box"> 
+         <a href="https://abc616.blog.csdn.net/article/details/136977059" target="_blank" data-report-click="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6661.1&quot;,&quot;mod&quot;:&quot;popu_871&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant_t0.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-136977059-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;1&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://abc616.blog.csdn.net/article/details/136977059&quot;}" data-report-query="spm=1001.2101.3001.6661.1&amp;utm_medium=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-1-136977059-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9&amp;depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-1-136977059-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9"> 
+          <div class="desc ellipsis-online ellipsis-online-1">
+           <em>Ghost</em>Net是2019年由华为诺亚方舟实验室发布的轻量级
+           <em>网络</em>，速度和MobileNetV3相似，但是识别的准确率比MobileNetV3高本文就教大家如何将
+           <em>YOLO</em>
+           <em>v8</em>的
+           <em>主干</em>
+           <em>网络</em>
+           <em>更换</em>为
+           <em>Ghost</em>Net！~🌈
+          </div> </a> 
+        </div> 
+       </div> 
+      </div> 
+     </div>  
+     <div class="second-recommend-box recommend-box recommend-highlight-default"> 
+      <div class="recommend-item-box type_blog clearfix" data-url="https://blog.csdn.net/weixin_51692073/article/details/132872546" data-report-view="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6650.1&quot;,&quot;mod&quot;:&quot;popu_387&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-132872546-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;1&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/weixin_51692073/article/details/132872546&quot;}"> 
+       <div class="content-box"> 
+        <div class="content-blog display-flex"> 
+         <div class="title-box"> 
+          <span class="type"> <img src="https://csdnimg.cn/release/blogv2/dist/components/img/blogType.png" alt=""> <span class="tip">博客</span> </span> 
+          <a href="https://blog.csdn.net/weixin_51692073/article/details/132872546" class="tit" target="_blank" data-report-click="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6650.1&quot;,&quot;mod&quot;:&quot;popu_387&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-132872546-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;1&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/weixin_51692073/article/details/132872546&quot;}" data-report-query="spm=1001.2101.3001.6650.1&amp;utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-1-132872546-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-1-132872546-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9"> 
+           <div class="left ellipsis-online ellipsis-online-1">
+            <em>YOLO</em>
+            <em>v8</em>最新
+            <em>改进</em>系列：
+            <em>主干</em>
+            <em>网络</em>
+            <em>改进</em>-
+            <em>YOLO</em>
+            <em>v8</em>+Efficient
+            <em>NetV2</em>，引入渐进式学习策略、自适应正则强度调整机制，提升模型检测效果！
+           </div> 
+           <div class="tag">
+            最新发布
+           </div> </a> 
+         </div> 
+         <div class="info-box display-flex"> 
+          <div class="info"> 
+           <a href="https://blog.csdn.net/weixin_51692073" target="_blank"><span class="blog-title">weixin_51692073的博客</span></a> 
+          </div> 
+          <div class="info display-flex"> 
+           <span class="info-block time">09-14</span> 
+           <span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> 5391 </span> 
+          </div> 
+         </div> 
+        </div> 
+        <div class="desc-box"> 
+         <a href="https://blog.csdn.net/weixin_51692073/article/details/132872546" target="_blank" data-report-click="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6650.1&quot;,&quot;mod&quot;:&quot;popu_387&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-1-132872546-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;1&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/weixin_51692073/article/details/132872546&quot;}" data-report-query="spm=1001.2101.3001.6650.1&amp;utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-1-132872546-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-1-132872546-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9"> 
+          <div class="desc ellipsis-online ellipsis-online-1">
+           <em>YOLO</em>
+           <em>v8</em>最新
+           <em>改进</em>系列：
+           <em>主干</em>
+           <em>网络</em>
+           <em>改进</em>-
+           <em>YOLO</em>
+           <em>v8</em>+Efficient
+           <em>NetV2</em>，引入渐进式学习策略、自适应正则强度调整机制，提升模型检测效果！
+          </div> </a> 
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+     <div class="recommend-box insert-baidu-box  recommend-highlight-default"> 
+      <div class="recommend-item-box no-index" style="display:none"></div> 
+      <div class="recommend-item-box type_blog clearfix" data-url="https://cv2023.blog.csdn.net/article/details/131299771" data-report-view="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6650.2&quot;,&quot;mod&quot;:&quot;popu_387&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-2-131299771-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;2&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://cv2023.blog.csdn.net/article/details/131299771&quot;}"> 
+       <div class="content-box"> 
+        <div class="content-blog display-flex"> 
+         <div class="title-box"> 
+          <span class="type"> <img src="https://csdnimg.cn/release/blogv2/dist/components/img/blogType.png" alt=""> <span class="tip">博客</span> </span> 
+          <a href="https://cv2023.blog.csdn.net/article/details/131299771" class="tit" target="_blank" data-report-click="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6650.2&quot;,&quot;mod&quot;:&quot;popu_387&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-2-131299771-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;2&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://cv2023.blog.csdn.net/article/details/131299771&quot;}" data-report-query="spm=1001.2101.3001.6650.2&amp;utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-2-131299771-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-2-131299771-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9"> 
+           <div class="left ellipsis-online ellipsis-online-1">
+            <em>Yolo</em>
+            <em>v8</em>轻量级
+            <em>网络</em>：
+            <em>Ghost</em>net、G_
+            <em>ghost</em>、
+            <em>Ghost</em>
+            <em>netv2</em>家族大作战（一）：华为
+            <em>Ghost</em>net，超越谷歌MobileNet | CVPR2020
+           </div> </a> 
+         </div> 
+         <div class="info-box display-flex"> 
+          <div class="info"> 
+           <a href="https://blog.csdn.net/m0_63774211" target="_blank"><span class="blog-title"></span></a> 
+          </div> 
+          <div class="info display-flex"> 
+           <span class="info-block time">06-20</span> 
+           <span class="info-block read"><img class="read-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> 1973 </span> 
+          </div> 
+         </div> 
+        </div> 
+        <div class="desc-box"> 
+         <a href="https://cv2023.blog.csdn.net/article/details/131299771" target="_blank" data-report-click="{&quot;ab&quot;:&quot;new&quot;,&quot;spm&quot;:&quot;1001.2101.3001.6650.2&quot;,&quot;mod&quot;:&quot;popu_387&quot;,&quot;extra&quot;:&quot;{\&quot;highlightScore\&quot;:0.0,\&quot;utm_medium\&quot;:\&quot;distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-2-131299771-blog-133946135.235^v43^pc_blog_bottom_relevance_base9\&quot;,\&quot;dist_request_id\&quot;:\&quot;1742833115296_89589\&quot;}&quot;,&quot;dist_request_id&quot;:&quot;1742833115296_89589&quot;,&quot;ab_strategy&quot;:&quot;vipdefault&quot;,&quot;index&quot;:&quot;2&quot;,&quot;strategy&quot;:&quot;2~default~BlogCommendFromBaidu~Rate&quot;,&quot;dest&quot;:&quot;https://cv2023.blog.csdn.net/article/details/131299771&quot;}" data-report-query="spm=1001.2101.3001.6650.2&amp;utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-2-131299771-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-2-131299771-blog-133946135.235%5Ev43%5Epc_blog_bottom_relevance_base9"> 
+          <div class="desc ellipsis-online ellipsis-online-1">
+           <em>Yolo</em>
+           <em>v8</em>引入轻量级
+           <em>网络</em>
+           <em>Ghost</em>net、G_
+           <em>ghost</em>、
+           <em>Ghost</em>
+           <em>netv2</em>等，减少最新的深度神经
+           <em>网络</em>的计算成本，引入高效的神经
+           <em>网络</em>结构。
+          </div> </a> 
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+     <div class="blog-footer-bottom" style="margin-top:10px;"></div>   
+    </main> 
+    <aside class="blog_container_aside"> 
+     <div id="asideProfile" class="aside-box"> 
+      <div class="profile-intro d-flex"> 
+       <div class="avatar-box d-flex justify-content-center flex-column"> 
+        <a href="https://blog.csdn.net/qq_45062768" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_379&quot;,&quot;spm&quot;:&quot;3001.4121&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768&quot;,&quot;ab&quot;:&quot;new&quot;}"> <img src="https://profile-avatar.csdnimg.cn/6df5ef35eaf04070bd2b2f8953d97b28_qq_45062768.jpg!1" class="avatar_pic"> </a> 
+       </div> 
+       <div class="user-info d-flex flex-column profile-intro-name-box"> 
+        <div class="profile-intro-name-boxTop"> 
+         <a href="https://blog.csdn.net/qq_45062768" target="_blank" class="" id="uid" title="w94ghz" data-report-click="{&quot;mod&quot;:&quot;popu_379&quot;,&quot;spm&quot;:&quot;3001.4122&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768&quot;,&quot;ab&quot;:&quot;new&quot;}"> <span class="name " username="qq_45062768">w94ghz</span> </a> 
+         <span> </span> 
+         <span class="flag expert-blog"> <span class="bubble">CSDN认证博客专家</span> </span> 
+         <span class="flag company-blog"> <span class="bubble">CSDN认证企业博客</span> </span> 
+        </div> 
+        <div class="profile-intro-name-boxFooter"> 
+         <span class="personal-home-page personal-home-years" title="已加入 CSDN 6年">码龄6年</span> 
+         <span class="personal-home-page"> <a class="personal-home-certification" href="https://i.csdn.net/#/uc/profile?utm_source=14998968" target="_blank" title="暂无认证"> <img src="https://csdnimg.cn/identity/nocErtification.png" alt=""> 暂无认证 </a> </span> 
+        </div> 
+       </div> 
+      </div> 
+      <div class="data-info d-flex item-tiling"> 
+       <dl class="text-center" title="71"> 
+        <a href="https://blog.csdn.net/qq_45062768" data-report-click="{&quot;mod&quot;:&quot;1598321000_001&quot;,&quot;spm&quot;:&quot;3001.4310&quot;}" data-report-query="t=1"> 
+         <dt>
+          <span class="count">71</span>
+         </dt> 
+         <dd class="font">
+          原创
+         </dd> </a> 
+       </dl> 
+       <dl class="text-center" data-report-click="{&quot;mod&quot;:&quot;1598321000_002&quot;,&quot;spm&quot;:&quot;3001.4311&quot;}" title="10612"> 
+        <a href="https://blog.csdn.net/rank/list/weekly" target="_blank"> 
+         <dt>
+          <span class="count">1万+</span>
+         </dt> 
+         <dd class="font">
+          周排名
+         </dd> </a> 
+       </dl> 
+       <dl class="text-center" title="94714"> 
+        <a href="https://blog.csdn.net/rank/list/total" data-report-click="{&quot;mod&quot;:&quot;1598321000_003&quot;,&quot;spm&quot;:&quot;3001.4312&quot;}" target="_blank"> 
+         <dt>
+          <span class="count">9万+</span>
+         </dt> 
+         <dd class="font">
+          总排名
+         </dd> </a> 
+       </dl> 
+       <dl class="text-center" style="min-width:58px" title="245239"> 
+        <dt>
+         <span class="count">24万+</span>
+        </dt> 
+        <dd>
+         访问
+        </dd> 
+       </dl> 
+       <dl class="text-center" title="4级,点击查看等级说明"> 
+        <dt>
+         <a href="https://blog.csdn.net/blogdevteam/article/details/103478461" target="_blank"> <img class="level" src="https://csdnimg.cn/identity/blog4.png"> </a> 
+        </dt> 
+        <dd>
+         等级
+        </dd> 
+       </dl> 
+      </div> 
+      <div class="item-rank"></div> 
+      <div class="data-info d-flex item-tiling"> 
+       <dl class="text-center" title="1535"> 
+        <dt>
+         <span class="count">1535</span>
+        </dt> 
+        <dd>
+         积分
+        </dd> 
+       </dl> 
+       <dl class="text-center" id="fanBox" title="11811"> 
+        <dt>
+         <span class="count" id="fan">1万+</span>
+        </dt> 
+        <dd>
+         粉丝
+        </dd> 
+       </dl> 
+       <dl class="text-center" title="639"> 
+        <dt>
+         <span class="count">639</span>
+        </dt> 
+        <dd>
+         获赞
+        </dd> 
+       </dl> 
+       <dl class="text-center" title="175"> 
+        <dt>
+         <span class="count">175</span>
+        </dt> 
+        <dd>
+         评论
+        </dd> 
+       </dl> 
+       <dl class="text-center" title="3102"> 
+        <dt>
+         <span class="count">3102</span>
+        </dt> 
+        <dd>
+         收藏
+        </dd> 
+       </dl> 
+      </div> 
+      <div class="aside-box-footer" data-report-view="{&quot;spm&quot;:&quot;3001.4296&quot;}"> 
+       <div class="badge-box d-flex"> 
+        <div class="badge d-flex"> 
+         <div class="icon-badge" title="分享学徒"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/medal/fenxiangxuetu@240.png" alt="分享学徒"> 
+          </div> 
+         </div> 
+         <div class="icon-badge" title="分享小兵"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/medal/fengxiangxiaobing@240.png" alt="分享小兵"> 
+          </div> 
+         </div> 
+         <div class="icon-badge" title="分享达人"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/medal/fenxiangdaren@240.png" alt="分享达人"> 
+          </div> 
+         </div> 
+         <div class="icon-badge" title="新秀勋章"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/medal/xinxiu@240.png" alt="新秀勋章"> 
+          </div> 
+         </div> 
+         <div class="icon-badge" title="持之以恒"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/a5842d54e4fa4a6b9a1de25d928d556e.png" alt="持之以恒"> 
+          </div> 
+         </div> 
+         <div class="icon-badge" title="勤写标兵"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/3e32835e9b464916b3ee2b4b78d45a68.png" alt="勤写标兵"> 
+          </div> 
+         </div> 
+         <div class="icon-badge" title="1024勋章"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/medal/1024@240.png" alt="1024勋章"> 
+          </div> 
+         </div> 
+         <div class="icon-badge" title="笔耕不辍"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/70592b2299594e37aedcaa91fc52a294.png" alt="笔耕不辍"> 
+          </div> 
+         </div> 
+         <div class="icon-badge" title="创作能手"> 
+          <div class="mouse-box"> 
+           <img class="medal-img" data-report-click="{&quot;spm&quot;:&quot;3001.4296&quot;}" src="https://csdnimg.cn/medal/qixiebiaobing4@240.png" alt="创作能手"> 
+          </div> 
+         </div> 
+        </div> 
+       </div> 
+      </div> 
+      <div class="profile-intro-name-boxOpration"> 
+       <div class="opt-letter-watch-box"> 
+        <a rel="noopener" class="bt-button personal-letter" href="https://im.csdn.net/chat/qq_45062768" target="_blank">私信</a> 
+       </div> 
+       <div class="opt-letter-watch-box"> 
+        <a class="attented personal-watch bt-button" id="btnAttent">已关注</a> 
+       </div> 
+      </div> 
+     </div> 
+     <div class="swiper-slide-box-remuneration"> 
+      <a data-report-click="{&quot;spm&quot;:&quot;3001.9728&quot;,&quot;extra&quot;:{&quot;index&quot;:&quot;0&quot;}}" data-report-view="{&quot;spm&quot;:&quot;3001.9728&quot;,&quot;extra&quot;:{&quot;index&quot;:&quot;0&quot;}}" href="https://ai.csdn.net/" target="_blank"> <img src="https://i-operation.csdnimg.cn/images/2dd892a9769b4cce9c086db94eab887f.png" alt=""> </a> 
+     </div> 
+     <div id="asideSearchArticle" class="aside-box"> 
+      <div class="aside-content search-comter"> 
+       <div class="aside-search aside-search-blog"> 
+        <input type="text" class="input-serch-blog" name="" autocomplete="off" value="" id="search-blog-words" placeholder="搜博主文章"> 
+        <a class="btn-search-blog" data-report-click="{&quot;spm&quot;:&quot;3001.9182&quot;}"> <img src="https://csdnimg.cn/cdn/content-toolbar/csdn-sou.png?v=1587021042"> </a> 
+       </div> 
+      </div> 
+     </div> 
+     <div id="asideHotArticle" class="aside-box"> 
+      <h3 class="aside-title">热门文章</h3> 
+      <div class="aside-content"> 
+       <ul class="hotArticle-list"> 
+        <li> <a href="https://blog.csdn.net/qq_45062768/article/details/132357617" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_541&quot;,&quot;spm&quot;:&quot;3001.4139&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/132357617&quot;,&quot;ab&quot;:&quot;new&quot;}"> PySide6入门教程之一 | 手把手教你安装PySide6及环境配置 <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> <span class="read">27175</span> </a> </li> 
+        <li> <a href="https://blog.csdn.net/qq_45062768/article/details/133811684" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_541&quot;,&quot;spm&quot;:&quot;3001.4139&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133811684&quot;,&quot;ab&quot;:&quot;new&quot;}"> YOLOv5改进实战 | 更换主干网络Backbone（一）之轻量化网络Ghostnet <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> <span class="read">15343</span> </a> </li> 
+        <li> <a href="https://blog.csdn.net/qq_45062768/article/details/133076427" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_541&quot;,&quot;spm&quot;:&quot;3001.4139&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133076427&quot;,&quot;ab&quot;:&quot;new&quot;}"> YOLOv5改进实战（导读篇） | YOLOv5 7.0 网络结构超详细解读 <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> <span class="read">14493</span> </a> </li> 
+        <li> <a href="https://blog.csdn.net/qq_45062768/article/details/133464550" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_541&quot;,&quot;spm&quot;:&quot;3001.4139&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133464550&quot;,&quot;ab&quot;:&quot;new&quot;}"> YOLOv5改进实战 | 更换损失函数（四）之NWD（小目标检测）篇 <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> <span class="read">13800</span> </a> </li> 
+        <li> <a href="https://blog.csdn.net/qq_45062768/article/details/132986334" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_541&quot;,&quot;spm&quot;:&quot;3001.4139&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/132986334&quot;,&quot;ab&quot;:&quot;new&quot;}"> YOLOv5改进实战 | 更换损失函数（三）之MPDIOU（2023最新IOU）篇 <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> <span class="read">10180</span> </a> </li> 
+       </ul> 
+      </div> 
+     </div> 
+     <div id="asideCategory" class="aside-box flexible-box"> 
+      <h3 class="aside-title">分类专栏</h3> 
+      <div class="aside-content"> 
+       <ul> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12475400.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12475400.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/direct/d9d54bf624bf4c1187e4d5043873c835.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> YOLOv8改进系列 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">27篇</span> </li> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12751617.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12751617.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/direct/fae8f5f2a5dd43d29224427d4de7ba07.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> Pyside6学习教程 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">8篇</span> </li> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12436990.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12436990.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/f341ac8f91a72872128b9e7a79fd6b72.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> YOLO改进系列 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">43篇</span> </li> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12474694.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12474694.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar special-column-bar-second"></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/21d8d1f2c30673ed6b05063fe13190e0.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> YOLO轻量化改进 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">16篇</span> </li> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12472802.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12472802.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar special-column-bar-second"></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/256b2b4717ff356f48d7f13aaa8e6ad9.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> YOLO系列实验实战 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">5篇</span> </li> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12475392.html" data-report-click="{&quot;mod&quot;:&quot;popu_537&quot;,&quot;spm&quot;:&quot;3001.4137&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12475392.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar special-column-bar-second"></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/d233bfcce7f2ff3a8010cf91de2729c3.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> YOLOv5改进系列 </span> </a> <span class="special-column-num">18篇</span> </li> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12472792.html" data-report-click="{&quot;mod&quot;:&quot;popu_537&quot;,&quot;spm&quot;:&quot;3001.4137&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12472792.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/85535fcf701fb31295aa181207791687.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> YOLOv7改进实战 </span> </a> <span class="special-column-num">2篇</span> </li> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12440643.html" data-report-click="{&quot;mod&quot;:&quot;popu_537&quot;,&quot;spm&quot;:&quot;3001.4137&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12440643.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/columns/default/20201014180756930.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> OpenCV实战笔记 </span> </a> <span class="special-column-num">4篇</span> </li> 
+        <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12434635.html" data-report-click="{&quot;mod&quot;:&quot;popu_537&quot;,&quot;spm&quot;:&quot;3001.4137&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12434635.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+          <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/18720b2e0971c4e3ceee4e5230cae0c0.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class="title oneline"> 计算机视觉CV </span> </a> <span class="special-column-num">10篇</span> </li> 
+       </ul> 
+      </div> 
+      <p class="text-center"> <a class="flexible-btn" data-fbox="aside-archive"><img class="look-more" src="https://csdnimg.cn/release/blogv2/dist/pc/img/arrowDownWhite.png" alt=""></a> </p> 
+     </div> 
+     <div id="asideNewComments" class="aside-box"> 
+      <h3 class="aside-title">最新评论</h3> 
+      <div class="aside-content"> 
+       <ul class="newcomment-list"> 
+        <li> <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_45062768/article/details/135111115#comments_36610451" data-report-click="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/135111115#comments_36610451&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/135111115#comments_36610451&quot;,&quot;ab&quot;:&quot;new&quot;}">YOLOv8实现K折交叉验证——解决数据集样本稀少和类别不平衡的难题，让你的模型评估更加稳健</a> <p class="comment ellipsis"> <a href="https://blog.csdn.net/xiaolongdasong" class="user-name" target="_blank">xiaolongdasong: </a> <span class="code-comments">你好，这个classes.yaml配置文件怎么改，自己的数据集的打data.yaml配置文件又怎么改</span> </p> </li> 
+        <li> <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_45062768/article/details/135111115#comments_36555359" data-report-click="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/135111115#comments_36555359&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/135111115#comments_36555359&quot;,&quot;ab&quot;:&quot;new&quot;}">YOLOv8实现K折交叉验证——解决数据集样本稀少和类别不平衡的难题，让你的模型评估更加稳健</a> <p class="comment ellipsis"> <a href="https://blog.csdn.net/Concentric_Circ" class="user-name" target="_blank">Concentric_Circ: </a> <span class="code-comments">您好，用了您分享的代码进行K折训练时，我只有第1个fold看似是正常训练的。接下来的几个fold，都是在第一个epoch得到的精确度最优，后面的epoch反而不如第一个了，导致每个fold都在101个epoch后早停(因为100个epoch没有增加)。请问这种情况正常吗？应该怎样解决呢？谢谢!!</span> </p> </li> 
+        <li> <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_45062768/article/details/133811684#comments_36531595" data-report-click="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133811684#comments_36531595&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133811684#comments_36531595&quot;,&quot;ab&quot;:&quot;new&quot;}">YOLOv5改进实战 | 更换主干网络Backbone（一）之轻量化网络Ghostnet</a> <p class="comment ellipsis"> <a href="https://blog.csdn.net/weixin_63069002" class="user-name" target="_blank">word麻鸭638: </a> <span class="code-comments">修改yaml文件时修改哪个文件呀，刚刚接触不太懂<img src="https://g.csdnimg.cn/static/face/emoji/002.png" alt="表情包"></span> </p> </li> 
+        <li> <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_45062768/article/details/132357617#comments_36489742" data-report-click="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/132357617#comments_36489742&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/132357617#comments_36489742&quot;,&quot;ab&quot;:&quot;new&quot;}">PySide6入门教程之一 | 手把手教你安装PySide6及环境配置</a> <p class="comment ellipsis"> <a href="https://blog.csdn.net/zataji" class="user-name" target="_blank">自动驾驶simulation: </a> <span class="code-comments">复制都不能复制。。。</span> </p> </li> 
+        <li> <a class="title text-truncate" target="_blank" href="https://blog.csdn.net/qq_45062768/article/details/133811684#comments_36403674" data-report-click="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133811684#comments_36403674&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_542&quot;,&quot;spm&quot;:&quot;3001.4231&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133811684#comments_36403674&quot;,&quot;ab&quot;:&quot;new&quot;}">YOLOv5改进实战 | 更换主干网络Backbone（一）之轻量化网络Ghostnet</a> <p class="comment ellipsis"> <a href="https://blog.csdn.net/m0_60732801" class="user-name" target="_blank">Nail818: </a> <span class="code-comments">想问下这样修改之后可以直接用yolov5s.pt跑自己的训练集吗？还是需要重新用Coco的跑出预训练权重文件</span> </p> </li> 
+       </ul> 
+      </div> 
+     </div> 
+     <div id="asideHotArticle" class="aside-box"> 
+      <h3 class="aside-title">大家在看</h3> 
+      <div class="aside-content"> 
+       <ul class="hotArticle-list"> 
+        <li> <a href="https://blog.csdn.net/subject625Ruben/article/details/146488889" target="_blank" data-report-click="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/subject625Ruben/article/details/146488889&quot;,&quot;strategy&quot;:&quot;202_1052723-2596070_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/subject625Ruben/article/details/146488889&quot;,&quot;strategy&quot;:&quot;202_1052723-2596070_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}"> HRP方法全文总结与模型流程解析 </a> </li> 
+        <li> <a href="https://blog.csdn.net/2503_91190672/article/details/146480610" target="_blank" data-report-click="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/2503_91190672/article/details/146480610&quot;,&quot;strategy&quot;:&quot;202_1052723-2596207_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/2503_91190672/article/details/146480610&quot;,&quot;strategy&quot;:&quot;202_1052723-2596207_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}"> 串的学习. <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> <span class="read">107</span> </a> </li> 
+        <li> <a href="https://blog.csdn.net/yweng18/article/details/146489490" target="_blank" data-report-click="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/yweng18/article/details/146489490&quot;,&quot;strategy&quot;:&quot;202_1052723-2596221_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/yweng18/article/details/146489490&quot;,&quot;strategy&quot;:&quot;202_1052723-2596221_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}"> 《Python实战进阶》第30集：Scikit-learn 入门：分类与回归模型 </a> </li> 
+        <li> <a href="https://blog.csdn.net/2503_90851626/article/details/146480242" target="_blank" data-report-click="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/2503_90851626/article/details/146480242&quot;,&quot;strategy&quot;:&quot;202_1052723-2596175_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/2503_90851626/article/details/146480242&quot;,&quot;strategy&quot;:&quot;202_1052723-2596175_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}"> 直播起号实操教学，打造百人千人直播间教学 <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> <span class="read">25</span> </a> </li> 
+        <li> <a href="https://blog.csdn.net/Td741218/article/details/146462752" target="_blank" data-report-click="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/Td741218/article/details/146462752&quot;,&quot;strategy&quot;:&quot;202_1052723-2596272_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;spm&quot;:&quot;3001.10093&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/Td741218/article/details/146462752&quot;,&quot;strategy&quot;:&quot;202_1052723-2596272_RCMD&quot;,&quot;ab&quot;:&quot;new&quot;}"> 鸿蒙开发新利器（一）：封装主题工具 <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/readCountWhite.png" alt=""> <span class="read">669</span> </a> </li> 
+       </ul> 
+      </div> 
+     </div> 
+     <div id="asideArchive" class="aside-box" style="display:block!important; width:300px;"> 
+      <h3 class="aside-title">最新文章</h3> 
+      <div class="aside-content"> 
+       <ul class="inf_list clearfix"> 
+        <li class="clearfix"> <a href="https://blog.csdn.net/qq_45062768/article/details/142035607" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_382&quot;,&quot;spm&quot;:&quot;3001.4136&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/142035607&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_382&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/142035607&quot;,&quot;ab&quot;:&quot;new&quot;}">YOLOv8改进实战 | 注意力篇 | 引入SeaFormer: 轻量高效的注意力模块助力涨点</a> </li> 
+        <li class="clearfix"> <a href="https://blog.csdn.net/qq_45062768/article/details/142035196" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_382&quot;,&quot;spm&quot;:&quot;3001.4136&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/142035196&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_382&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/142035196&quot;,&quot;ab&quot;:&quot;new&quot;}">YOLOv8改进实战 | 注意力篇 | CloFormer: 注意力机制与卷积的完美融合CloAtention，即插即用</a> </li> 
+        <li class="clearfix"> <a href="https://blog.csdn.net/qq_45062768/article/details/133977127" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_382&quot;,&quot;spm&quot;:&quot;3001.4136&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133977127&quot;,&quot;ab&quot;:&quot;new&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_382&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/article/details/133977127&quot;,&quot;ab&quot;:&quot;new&quot;}">YOLOv8改进实战 | 注意力篇 | 引入ICCV2023顶会LSKNet：大选择性卷积注意力模块LSKA，助力小目标检测</a> </li> 
+       </ul> 
+       <div class="archive-bar"></div> 
+       <div class="archive-box"> 
+        <div class="archive-list-item">
+         <a href="https://blog.csdn.net/qq_45062768?type=blog&amp;year=2024&amp;month=09" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_538&quot;,&quot;spm&quot;:&quot;3001.4138&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768?type=blog&amp;year=2024&amp;month=09&quot;}"><span class="year">2024年</span><span class="num">13篇</span></a>
+        </div> 
+        <div class="archive-list-item">
+         <a href="https://blog.csdn.net/qq_45062768?type=blog&amp;year=2023&amp;month=12" target="_blank" data-report-click="{&quot;mod&quot;:&quot;popu_538&quot;,&quot;spm&quot;:&quot;3001.4138&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768?type=blog&amp;year=2023&amp;month=12&quot;}"><span class="year">2023年</span><span class="num">58篇</span></a>
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+     <!-- 详情页显示目录 --> 
+     <!--文章目录--> 
+     <div id="asidedirectory" class="aside-box"> 
+      <div class="groupfile" id="directory"> 
+       <h3 class="aside-title">目录</h3> 
+       <div class="align-items-stretch group_item"> 
+        <div class="pos-box"> 
+         <div class="scroll-box"> 
+          <div class="toc-box"></div> 
+         </div> 
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+    </aside>    
+   </div> 
+   <div class="recommend-right align-items-stretch clearfix" id="rightAside" data-type="recommend"> 
+    <aside class="recommend-right_aside"> 
+     <div class="rightside-fixed-hide"> 
+     </div> 
+     <div id="recommend-right"> 
+      <div class="flex-column aside-box groupfile" id="groupfile"> 
+       <div class="groupfile-div"> 
+        <h3 class="aside-title">目录</h3> 
+        <div class="align-items-stretch group_item"> 
+         <div class="pos-box"> 
+          <div class="scroll-box"> 
+           <div class="toc-box"></div> 
+          </div> 
+         </div> 
+        </div> 
+       </div> 
+      </div> 
+      <div class="aside-box kind_person d-flex flex-column"> 
+       <h3 class="aside-title">分类专栏</h3> 
+       <div class="align-items-stretch kindof_item" id="kind_person_column"> 
+        <div class="aside-content"> 
+         <ul> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12475400.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12475400.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/direct/d9d54bf624bf4c1187e4d5043873c835.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> YOLOv8改进系列 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">27篇</span> </li> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12751617.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12751617.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/direct/fae8f5f2a5dd43d29224427d4de7ba07.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> Pyside6学习教程 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">8篇</span> </li> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12436990.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12436990.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/f341ac8f91a72872128b9e7a79fd6b72.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> YOLO改进系列 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">43篇</span> </li> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12474694.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12474694.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar special-column-bar-second"></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/21d8d1f2c30673ed6b05063fe13190e0.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> YOLO轻量化改进 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">16篇</span> </li> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12472802.html" data-report-click="{&quot;mod&quot;:&quot;popu_826&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4230&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12472802.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar special-column-bar-second"></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/256b2b4717ff356f48d7f13aaa8e6ad9.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> YOLO系列实验实战 </span> <span class="pay-tag">付费</span> </a> <span class="special-column-num">5篇</span> </li> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12475392.html" data-report-click="{&quot;mod&quot;:&quot;popu_537&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4137&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12475392.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar special-column-bar-second"></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/d233bfcce7f2ff3a8010cf91de2729c3.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> YOLOv5改进系列 </span> </a> <span class="special-column-num">18篇</span> </li> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12472792.html" data-report-click="{&quot;mod&quot;:&quot;popu_537&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4137&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12472792.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/85535fcf701fb31295aa181207791687.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> YOLOv7改进实战 </span> </a> <span class="special-column-num">2篇</span> </li> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12440643.html" data-report-click="{&quot;mod&quot;:&quot;popu_537&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4137&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12440643.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/columns/default/20201014180756930.png?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> OpenCV实战笔记 </span> </a> <span class="special-column-num">4篇</span> </li> 
+          <li> <a class="clearfix special-column-name" href="https://blog.csdn.net/qq_45062768/category_12434635.html" data-report-click="{&quot;mod&quot;:&quot;popu_537&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4137&quot;,&quot;strategy&quot;:&quot;pc付费专栏左侧入口&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768/category_12434635.html&quot;,&quot;ab&quot;:&quot;new&quot;}"> 
+            <div class="special-column-bar "></div> <img src="https://i-blog.csdnimg.cn/blog_column_migrate/18720b2e0971c4e3ceee4e5230cae0c0.jpeg?x-oss-process=image/resize,m_fixed,h_64,w_64" alt="" onerror="this.src='https://i-blog.csdnimg.cn/columns/default/20201014180756922.png?x-oss-process=image/resize,m_fixed,h_64,w_64'"> <span class=""> 计算机视觉CV </span> </a> <span class="special-column-num">10篇</span> </li> 
+         </ul> 
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+    </aside> 
+   </div> 
+   <div class="recommend-right1  align-items-stretch clearfix" id="rightAsideConcision" data-type="recommend"> 
+    <aside class="recommend-right_aside"> 
+     <div id="recommend-right-concision"> 
+      <div class="flex-column aside-box groupfile" id="groupfileConcision"> 
+       <div class="groupfile-div1"> 
+        <h3 class="aside-title">目录</h3> 
+        <div class="align-items-stretch group_item"> 
+         <div class="pos-box"> 
+          <div class="scroll-box"> 
+           <div class="toc-box"></div> 
+          </div> 
+         </div> 
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+    </aside> 
+   </div> 
+  </div> 
+  <div class="mask-dark"></div> 
+  <div class="skin-boxshadow"></div> 
+  <div class="directory-boxshadow"></div> 
+  <div class="comment-side-box-shadow comment-side-tit-close" id="commentSideBoxshadow"> 
+   <div class="comment-side-content"> 
+    <div class="comment-side-tit"> 
+     <div class="comment-side-tit-count">
+      评论&nbsp;
+      <span class="count">4</span>
+     </div> 
+     <img class="comment-side-tit-close" src="https://csdnimg.cn/release/blogv2/dist/pc/img/closeBt.png">
+    </div> 
+    <div id="pcCommentSideBox" class="comment-box comment-box-new2 " style="display:block"> 
+     <div class="comment-edit-box d-flex"> 
+      <div class="user-img"> 
+       <a href="https://blog.csdn.net/2401_84444578" target="_blank"> <img src="https://profile-avatar.csdnimg.cn/default.jpg!1"> </a> 
+      </div> 
+      <form id="commentform"> 
+       <textarea class="comment-content" name="comment_content" id="comment_content" placeholder="欢迎高质量的评论，低质的评论会被折叠" maxlength="1000"></textarea> 
+       <div class="comment-reward-box" style="background-image: url('https://img-home.csdnimg.cn/images/20230131025301.png');"> 
+        <a class="btn-remove-reward"></a> 
+        <div class="form-reward-box"> 
+         <div class="info">
+           成就一亿技术人! 
+         </div> 
+         <div class="price-info">
+           拼手气红包
+          <span class="price">6.0元</span> 
+         </div> 
+        </div> 
+       </div> 
+       <div class="comment-operate-box"> 
+        <div class="comment-operate-l"> 
+         <span id="tip_comment" class="tip">还能输入<em>1000</em>个字符</span> 
+        </div> 
+        <div class="comment-operate-c">
+          &nbsp; 
+        </div> 
+        <div class="comment-operate-r"> 
+         <div class="comment-operate-item comment-reward"> 
+          <img class="comment-operate-img" data-url="https://csdnimg.cn/release/blogv2/dist/pc/img/" src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentReward.png" alt="红包"> 
+          <span class="comment-operate-tip">添加红包</span> 
+         </div> 
+         <div class="comment-operate-item comment-emoticon"> 
+          <img class="comment-operate-img" data-url="https://csdnimg.cn/release/blogv2/dist/pc/img/" src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentEmotionIcon.png" alt="表情包"> 
+          <span class="comment-operate-tip">插入表情</span> 
+          <div class="comment-emoticon-box comment-operate-isshow"> 
+           <div class="comment-emoticon-img-box"></div> 
+          </div> 
+         </div> 
+         <div class="comment-operate-item comment-code"> 
+          <img class="comment-operate-img" data-url="https://csdnimg.cn/release/blogv2/dist/pc/img/" src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentCodeIcon.png" alt="表情包"> 
+          <span class="comment-operate-tip">代码片</span> 
+          <div class="comment-code-box comment-operate-isshow"> 
+           <ul id="commentCode"> 
+            <li><a data-code="html">HTML/XML</a></li> 
+            <li><a data-code="objc">objective-c</a></li> 
+            <li><a data-code="ruby">Ruby</a></li> 
+            <li><a data-code="php">PHP</a></li> 
+            <li><a data-code="csharp">C</a></li> 
+            <li><a data-code="cpp">C++</a></li> 
+            <li><a data-code="javascript">JavaScript</a></li> 
+            <li><a data-code="python">Python</a></li> 
+            <li><a data-code="java">Java</a></li> 
+            <li><a data-code="css">CSS</a></li> 
+            <li><a data-code="sql">SQL</a></li> 
+            <li><a data-code="plain">其它</a></li> 
+           </ul> 
+          </div> 
+         </div> 
+         <div class="comment-operate-item"> 
+          <input type="hidden" id="comment_replyId" name="comment_replyId"> 
+          <input type="hidden" id="article_id" name="article_id" value="133946135"> 
+          <input type="hidden" id="comment_userId" name="comment_userId" value=""> 
+          <input type="hidden" id="commentId" name="commentId" value=""> 
+          <a data-report-click="{&quot;mod&quot;:&quot;1582594662_003&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4227&quot;,&quot;ab&quot;:&quot;new&quot;}"> <input type="submit" class="btn-comment btn-comment-input" value="评论"> </a> 
+         </div> 
+        </div> 
+       </div> 
+      </form> 
+     </div> 
+     <div class="comment-list-container"> 
+      <div class="comment-list-box comment-operate-item"> 
+      </div> 
+      <div id="lookGoodComment" class="look-good-comment side-look-comment"> 
+       <a class="look-more-comment">查看更多评论<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentArrowDownWhite.png" alt=""></a> 
+      </div> 
+      <div id="lookFlodComment" class="look-flod-comment"> 
+       <span class="count"></span>&nbsp;条评论被折叠&nbsp;
+       <a class="look-more-flodcomment">查看</a> 
+      </div> 
+      <div class="opt-box text-center"> 
+       <div class="btn btn-sm btn-link-blue" id="btnMoreComment"></div> 
+      </div> 
+     </div> 
+    </div> 
+    <div id="pcFlodCommentSideBox" class="pc-flodcomment-sidebox"> 
+     <div class="comment-fold-tit">
+      <span id="lookUnFlodComment" class="back"><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentArrowLeftWhite.png" alt=""></span>被折叠的&nbsp;
+      <span class="count"></span>&nbsp;条评论 
+      <a href="https://blogdev.blog.csdn.net/article/details/122245662" class="tip" target="_blank">为什么被折叠?</a> 
+      <a href="https://bbs.csdn.net/forums/FreeZone" class="park" target="_blank"> <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/iconPark.png">到【灌水乐园】发言</a> 
+     </div> 
+     <div class="comment-fold-content"></div> 
+     <div id="lookBadComment" class="look-bad-comment side-look-comment"> 
+      <a class="look-more-comment">查看更多评论<img src="https://csdnimg.cn/release/blogv2/dist/pc/img/commentArrowDownWhite.png" alt=""></a> 
+     </div> 
+    </div> 
+   </div> 
+   <div class="comment-rewarddialog-box"> 
+    <div class="form-box"> 
+     <div class="title-box">
+       添加红包 
+      <a class="btn-form-close"></a> 
+     </div> 
+     <form id="commentRewardForm"> 
+      <div class="ipt-box"> 
+       <label for="txtName">祝福语</label> 
+       <div class="ipt-btn-box"> 
+        <input type="text" name="name" id="txtName" autocomplete="off" maxlength="50"> 
+        <a class="btn-ipt btn-random"></a> 
+       </div> 
+       <p class="notice">请填写红包祝福语或标题</p> 
+      </div> 
+      <div class="ipt-box"> 
+       <label for="txtSendAmount">红包数量</label> 
+       <div class="ipt-txt-box"> 
+        <input type="text" name="sendAmount" maxlength="4" id="txtSendAmount" placeholder="请填写红包数量(最小10个)" autocomplete="off"> 
+        <span class="after-txt">个</span> 
+       </div> 
+       <p class="notice">红包个数最小为10个</p> 
+      </div> 
+      <div class="ipt-box"> 
+       <label for="txtMoney">红包总金额</label> 
+       <div class="ipt-txt-box error"> 
+        <input type="text" name="money" maxlength="5" id="txtMoney" placeholder="请填写总金额(最低5元)" autocomplete="off"> 
+        <span class="after-txt">元</span> 
+       </div> 
+       <p class="notice">红包金额最低5元</p> 
+      </div> 
+      <div class="balance-info-box"> 
+       <label>余额支付</label> 
+       <div class="balance-info">
+         当前余额
+        <span class="balance">3.43</span>元 
+        <a href="https://i.csdn.net/#/wallet/balance/recharge" class="link-charge" target="_blank">前往充值 &gt;</a> 
+       </div> 
+      </div> 
+      <div class="opt-box"> 
+       <div class="pay-info">
+         需支付：
+        <span class="price">10.00</span>元 
+       </div> 
+       <button type="button" class="ml-auto btn-cancel">取消</button> 
+       <button type="button" class="ml8 btn-submit" disabled="true">确定</button> 
+      </div> 
+     </form> 
+    </div> 
+   </div> 
+   <div class="rr-guide-box"> 
+    <div class="rr-first-box"> 
+     <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/guideRedReward02.png" alt=""> 
+     <button class="btn-guide-known next">下一步</button> 
+    </div> 
+    <div class="rr-second-box"> 
+     <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/guideRedReward03.png" alt=""> 
+     <button class="btn-guide-known known">知道了</button> 
+    </div> 
+   </div> 
+  </div> 
+  <div class="redEnvolope" id="redEnvolope"> 
+   <div class="env-box"> 
+    <div class="env-container"> 
+     <div class="pre-open" id="preOpen"> 
+      <div class="top"> 
+       <header> 
+        <img class="clearTpaErr" :src="redpacketAuthor.avatar" alt=""> 
+        <div class="author">
+         成就一亿技术人!
+        </div> 
+       </header> 
+       <div class="bot-icon"></div> 
+      </div> 
+      <footer> 
+       <div class="red-openbtn open-start"></div> 
+       <div class="tip">
+         领取后你会自动成为博主和红包主的粉丝 
+        <a class="rule" target="_blank">规则</a> 
+       </div> 
+      </footer> 
+     </div> 
+     <div class="opened" id="opened"> 
+      <div class="bot-icon"> 
+       <header> 
+        <a class="creatorUrl" href="" target="_blank"> <img class="clearTpaErr" src="https://profile-avatar.csdnimg.cn/default.jpg!2" alt=""> </a> 
+        <div class="author"> 
+         <div class="tt">
+          hope_wisdom
+         </div> 发出的红包 
+        </div> 
+       </header> 
+      </div> 
+      <div class="receive-box"> 
+       <header></header> 
+       <div class="receive-list"> 
+       </div> 
+      </div> 
+     </div> 
+    </div> 
+    <div class="close-btn"></div> 
+   </div> 
+  </div> 
+  <div id="rewardNew" class="reward-popupbox-new"> 
+   <p class="rewad-title">打赏作者<span class="reward-close"><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/closeBt.png"></span></p> 
+   <dl class="profile-box"> 
+    <dd> 
+     <a href="https://blog.csdn.net/qq_45062768" data-report-click="{&quot;mod&quot;:&quot;popu_379&quot;,&quot;dest&quot;:&quot;https://blog.csdn.net/qq_45062768&quot;,&quot;ab&quot;:&quot;new&quot;}"> <img src="https://profile-avatar.csdnimg.cn/6df5ef35eaf04070bd2b2f8953d97b28_qq_45062768.jpg!1" class="avatar_pic"> </a> 
+    </dd> 
+    <dt> 
+     <p class="blog-name">w94ghz</p> 
+     <p class="blog-discript">你的鼓励将是我创作的最大动力</p> 
+    </dt> 
+   </dl> 
+   <div class="reward-box-new"> 
+    <div class="reward-content">
+     <div class="reward-right"></div>
+    </div> 
+   </div> 
+   <div class="money-box"> 
+    <span class="choose-money choosed" data-id="1">¥1</span> 
+    <span class="choose-money " data-id="2">¥2</span> 
+    <span class="choose-money " data-id="4">¥4</span> 
+    <span class="choose-money " data-id="6">¥6</span> 
+    <span class="choose-money " data-id="10">¥10</span> 
+    <span class="choose-money " data-id="20">¥20</span> 
+   </div> 
+   <div class="sure-box"> 
+    <div class="sure-box-money"> 
+     <div class="code-box"> 
+      <div class="code-num-box"> 
+       <span class="code-name">扫码支付：</span>
+       <span class="code-num">¥1</span> 
+      </div> 
+      <div class="code-img-box"> 
+       <div class="renovate"> 
+        <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/pay-time-out.png"> 
+        <span>获取中</span> 
+       </div> 
+      </div> 
+      <div class="code-pay-box"> 
+       <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/newWeiXin.png" alt=""> 
+       <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/newZhiFuBao.png" alt=""> 
+       <span>扫码支付</span> 
+      </div> 
+     </div> 
+    </div> 
+    <div class="sure-box-blance"> 
+     <p class="tip">您的余额不足，请更换扫码支付或<a target="_blank" data-report-click="{&quot;mod&quot;:&quot;1597646289_003&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4302&quot;}" href="https://i.csdn.net/#/wallet/balance/recharge?utm_source=RewardVip" class="go-invest">充值</a></p> 
+     <p class="is-have-money"><a class="reward-sure">打赏作者</a></p> 
+    </div> 
+   </div> 
+  </div> 
+  <div class="pay-code"> 
+   <div class="pay-money">
+    实付
+    <span class="pay-money-span" data-nowprice="" data-oldprice="">元</span>
+   </div> 
+   <div class="content-blance">
+    <a class="blance-bt" href="javascript:;">使用余额支付</a>
+   </div> 
+   <div class="content-code"> 
+    <div id="payCode" data-id=""> 
+     <div class="renovate"> 
+      <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/pay-time-out.png"> 
+      <span>点击重新获取</span> 
+     </div> 
+    </div> 
+    <div class="pay-style">
+     <span><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/weixin.png"></span>
+     <span><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/zhifubao.png"></span>
+     <span><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/jingdong.png"></span>
+     <span class="text">扫码支付</span>
+    </div> 
+   </div> 
+   <div class="bt-close"> 
+    <svg t="1567152543821" class="icon" viewbox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="10924" xmlns:xlink="http://www.w3.org/1999/xlink" width="12" height="12"> 
+     <defs> 
+      <style type="text/css"></style> 
+     </defs> 
+     <path d="M512 438.378667L806.506667 143.893333a52.032 52.032 0 1 1 73.6 73.621334L585.621333 512l294.485334 294.485333a52.074667 52.074667 0 0 1-73.6 73.642667L512 585.621333 217.514667 880.128a52.053333 52.053333 0 1 1-73.621334-73.642667L438.378667 512 143.893333 217.514667a52.053333 52.053333 0 1 1 73.621334-73.621334L512 438.378667z" fill="" p-id="10925"></path> 
+    </svg> 
+   </div> 
+   <div class="pay-balance"> 
+    <input type="radio" class="pay-code-radio" data-type="details"> 
+    <span class="span">钱包余额</span> 
+    <span class="balance" style="color:#FC5531;font-size:14px;">0</span> 
+    <div class="pay-code-tile"> 
+     <img src="https://csdnimg.cn/release/blogv2/dist/pc/img/pay-help.png" alt=""> 
+     <div class="pay-code-content"> 
+      <div class="span"> 
+       <p class="title">抵扣说明：</p> 
+       <p> 1.余额是钱包充值的虚拟货币，按照1:1的比例进行支付金额的抵扣。<br> 2.余额无法直接购买下载，可以购买VIP、付费专栏及课程。</p> 
+      </div> 
+     </div> 
+    </div> 
+   </div> 
+   <a class="pay-balance-con" href="https://i.csdn.net/#/wallet/balance/recharge" target="_blank"><img src="https://csdnimg.cn/release/blogv2/dist/pc/img/recharge.png" alt=""><span>余额充值</span></a> 
+  </div> 
+  <div style="display:none;"> 
+   <img src="" onerror="setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){var test=&quot;\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74&quot;}},3000);"> 
+  </div> 
+  <div class="keyword-dec-box" id="keywordDecBox"></div>       
+  <link rel="stylesheet" href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css"> 
+  <link rel="stylesheet" href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-dark.css">                  
+ </body>
+</html>
